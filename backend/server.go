@@ -5,6 +5,9 @@ import (
 	"log/slog"
 	"os"
 	"rsvp/event"
+	"rsvp/invitation"
+	"rsvp/person"
+	"rsvp/rsvp"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
@@ -16,6 +19,8 @@ func main() {
 	if err != nil {
 		panic("failed to connect database")
 	}
+
+	db.AutoMigrate(&event.Event{}, &invitation.Invitation{}, &person.Person{}, &rsvp.RSVP{})
 
 	_ = event.NewRepository(db)
 
