@@ -8,11 +8,39 @@ import (
 	"rsvp/invitation"
 	"rsvp/person"
 	"rsvp/rsvp"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
+
+func createTestData(personRepository person.Repository, eventRepository event.Repository, invitationRepository invitation.Repository, run bool) {
+	if !run {
+		return
+	}
+
+	p, _ := personRepository.Create(person.Person{
+		First: "John",
+		Last:  "Doe",
+	})
+
+	now := time.Now()
+
+	e, _ := eventRepository.Create(event.Event{
+		Title:  "Test Event",
+		Date:   &now,
+		Street: "111 Flinders Street",
+		City:   "Melbourne, VIC 3000",
+	})
+
+	invitation, _ := invitationRepository.Create(invitation.Invitation{
+		UserID:  p.ID,
+		EventID: e.ID,
+	})
+
+	fmt.Println(invitation)
+}
 
 func main() {
 	db, err := gorm.Open(sqlite.Open("data.db"), &gorm.Config{})
@@ -22,13 +50,22 @@ func main() {
 
 	db.AutoMigrate(&event.Event{}, &invitation.Invitation{}, &person.Person{}, &rsvp.RSVP{})
 
-	_ = event.NewRepository(db)
+	eventRepository := event.NewRepository(db)
+	rsvpRepository := rsvp.NewRepository(db)
+	invitationRepository := invitation.NewRepository(db)
+	personRepository := person.NewRepository(db)
+	invitationController := invitation.NewController(invitationRepository, eventRepository, rsvpRepository)
+
+	createTestData(personRepository, eventRepository, invitationRepository, false)
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 	gin.SetMode(gin.ReleaseMode)
 	server := gin.New()
 	server.Use(gin.Recovery())
+
+	invitationController.HandleRoutes(server.Group("invitation"))
+	// eventRoutes.HandleRoutes(server.Group("event"))
 
 	fmt.Println("Starting")
 	server.Run(fmt.Sprintf(":%d", 9083))

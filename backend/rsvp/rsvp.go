@@ -8,6 +8,7 @@ type RSVP struct {
 
 	ID             string
 	InvitationID   string
+	EventID        string
 	Going          string
 	BringingFriend string
 }

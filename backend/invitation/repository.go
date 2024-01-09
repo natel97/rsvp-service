@@ -5,6 +5,15 @@ import (
 	"gorm.io/gorm"
 )
 
+type Repository interface {
+	Create(e Invitation) (*Invitation, error)
+	Get(id string) (*Invitation, error)
+	GetAll() ([]Invitation, error)
+	GetByEvent(eventID string) ([]Invitation, error)
+	Delete(id string) (*Invitation, error)
+	Update(id string, details Invitation) (*Invitation, error)
+}
+
 type repository struct {
 	db *gorm.DB
 }
@@ -37,6 +46,28 @@ func (repo *repository) Get(id string) (*Invitation, error) {
 	}
 
 	return &invitation, nil
+}
+
+func (repo *repository) GetAll() ([]Invitation, error) {
+	invitation := []Invitation{}
+
+	err := repo.db.Find(&invitation).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return invitation, nil
+}
+
+func (repo *repository) GetByEvent(eventID string) ([]Invitation, error) {
+	invitation := []Invitation{}
+
+	err := repo.db.Find(&invitation, "event_id = ?", eventID).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return invitation, nil
 }
 
 func (repo *repository) Delete(id string) (*Invitation, error) {

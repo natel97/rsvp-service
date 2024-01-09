@@ -15,6 +15,14 @@ func NewRepository(db *gorm.DB) *repository {
 	}
 }
 
+type Repository interface {
+	Create(e Person) (*Person, error)
+	Get(id string) (*Person, error)
+	GetAll() ([]Person, error)
+	Delete(id string) (*Person, error)
+	Update(id string, details Person) (*Person, error)
+}
+
 func (repo *repository) Create(e Person) (*Person, error) {
 	id := uuid.New()
 	e.ID = id.String()
@@ -37,6 +45,17 @@ func (repo *repository) Get(id string) (*Person, error) {
 	}
 
 	return &person, nil
+}
+
+func (repo *repository) GetAll() ([]Person, error) {
+	person := []Person{}
+
+	err := repo.db.Find(&person).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return person, nil
 }
 
 func (repo *repository) Delete(id string) (*Person, error) {

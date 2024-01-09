@@ -9,6 +9,14 @@ type repository struct {
 	db *gorm.DB
 }
 
+type Repository interface {
+	Create(e RSVP) (*RSVP, error)
+	GetEventRSVPs(eventID string) ([]RSVP, error)
+	Get(id string) (*RSVP, error)
+	Delete(id string) (*RSVP, error)
+	Update(id string, details RSVP) (*RSVP, error)
+}
+
 func NewRepository(db *gorm.DB) *repository {
 	return &repository{
 		db: db,
@@ -26,6 +34,17 @@ func (repo *repository) Create(e RSVP) (*RSVP, error) {
 	}
 
 	return &e, nil
+}
+
+func (repo *repository) GetEventRSVPs(eventID string) ([]RSVP, error) {
+	rsvp := []RSVP{}
+
+	err := repo.db.Find(&rsvp, "event_id = ?", eventID).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return rsvp, nil
 }
 
 func (repo *repository) Get(id string) (*RSVP, error) {

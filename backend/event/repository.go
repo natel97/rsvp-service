@@ -5,6 +5,14 @@ import (
 	"gorm.io/gorm"
 )
 
+type Repository interface {
+	Create(e Event) (*Event, error)
+	Get(id string) (*Event, error)
+	GetAll() ([]Event, error)
+	Delete(id string) (*Event, error)
+	Update(id string, details Event) (*Event, error)
+}
+
 type repository struct {
 	db *gorm.DB
 }
@@ -37,6 +45,17 @@ func (repo *repository) Get(id string) (*Event, error) {
 	}
 
 	return &event, nil
+}
+
+func (repo *repository) GetAll() ([]Event, error) {
+	event := []Event{}
+
+	err := repo.db.Find(&event).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return event, nil
 }
 
 func (repo *repository) Delete(id string) (*Event, error) {
