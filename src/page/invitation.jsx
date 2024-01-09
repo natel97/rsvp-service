@@ -1,4 +1,4 @@
-import { EventCard, PageHeader } from "../components";
+import { Action, EventCard, PageHeader } from "../components";
 
 const Invitation = () => {
   return (
@@ -10,9 +10,9 @@ const Invitation = () => {
         <PageHeader>You Are Invited</PageHeader>
         <EventCard />
       </div>
-      <div>Add to Calendar</div>
-      <div>RSVP (No Response)</div>
-      <div>Get Reminder</div>
+      <Action>Add to Calendar</Action>
+      <Action>RSVP (No Response)</Action>
+      {/* <Action>Get Reminder</Action> */}
     </div>
   );
 };
