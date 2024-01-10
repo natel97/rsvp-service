@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"rsvp/event"
 	"rsvp/rsvp"
+	"time"
 
+	ical "github.com/arran4/golang-ical"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -92,6 +94,7 @@ func (ctrl *Controller) get(ctx *gin.Context) {
 		Attendance:   attendance,
 		MyAttendance: me.Going,
 		MyFriend:     me.BringingFriend,
+		Description:  event.Description,
 	}
 
 	ctx.JSON(http.StatusOK, response)
@@ -128,9 +131,46 @@ func (ctrl *Controller) post(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, "Success")
 }
 
+func (ctrl *Controller) getCalendarFile(ctx *gin.Context) {
+	id, _ := ctx.Params.Get("id")
+
+	invitation, err := ctrl.repository.Get(id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
+		fmt.Println(err)
+		return
+	}
+
+	event, err := ctrl.eventRepository.Get(invitation.EventID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
+		fmt.Println(err)
+		return
+	}
+
+	deref := *event.Date
+	endAt := deref.Add(2 * time.Hour)
+
+	cal := ical.NewCalendar()
+	cal.SetMethod(ical.MethodRequest)
+	calEvent := cal.AddEvent(invitation.ID)
+	calEvent.SetDtStampTime(event.CreatedAt)
+	calEvent.SetLocation(fmt.Sprintf("%s, %s", event.Street, event.City))
+	calEvent.SetStartAt(*event.Date)
+	calEvent.SetEndAt(endAt)
+	calEvent.SetSummary(event.Title)
+	calEvent.SetURL(fmt.Sprintf("%s/invitation/%s", ctx.Request.Header.Get("Origin"), id))
+	calEvent.SetDescription(fmt.Sprintf("%s\n\n%s/invitation/%s", event.Description, ctx.Request.Header.Get("Origin"), id))
+
+	calString := cal.Serialize()
+	ctx.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s.ics", event.Title))
+	ctx.Data(http.StatusOK, "application/octet-stream", []byte(calString))
+}
+
 func (ctrl *Controller) HandleRoutes(group *gin.RouterGroup) {
 	group.GET("/:id", ctrl.get)
 	group.POST("/:id/rsvp", ctrl.post)
+	group.GET("/:id/download", ctrl.getCalendarFile)
 }
 
 func NewController(repository *repository, eventRepository event.Repository, rsvpRepository rsvp.Repository) *Controller {

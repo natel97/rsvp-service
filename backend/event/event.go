@@ -9,9 +9,11 @@ import (
 type Event struct {
 	gorm.Model
 
-	ID     string
-	Title  string
-	Date   *time.Time
-	Street string
-	City   string
+	ID           string
+	Title        string
+	Date         *time.Time
+	Street       string
+	City         string
+	Description  string
+	InternalNote string
 }

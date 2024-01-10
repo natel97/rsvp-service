@@ -21,8 +21,8 @@ const RSVP = () => {
       return;
     }
 
-    setGoing(invitation.going);
-    setFriend(invitation.bringingFriend);
+    setGoing(invitation.myAttendance);
+    setFriend(invitation.myFriend);
   }, [invitation]);
 
   useEffect(() => {
@@ -68,9 +68,16 @@ const RSVP = () => {
         />
       </div>
       <ActionButton
-        onClick={() =>
-          submit(params.id, going, friend).then(() => navigate("./.."))
-        }
+        onClick={() => {
+          if (
+            going === invitation.myAttendance &&
+            friend === invitation.myFriend
+          ) {
+            navigate("./..");
+            return;
+          }
+          submit(params.id, going, friend).then(() => navigate("./.."));
+        }}
         style={{ marginBottom: "0" }}
       >
         Submit

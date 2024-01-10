@@ -2,6 +2,29 @@ import { useEffect, useState } from "react";
 import { ActionButton, EventCard, PageHeader } from "../components";
 import { useParams, useNavigate } from "react-router-dom";
 
+const downloadEvent = (id) => {
+  fetch(`${import.meta.env.VITE_API_URL}/invitation/${id}/download`).then(
+    (val) => {
+      const header = val.headers.get("Content-Disposition");
+      const parts = header.split(";");
+      const filename = parts[1].split("=")[1];
+      val.text().then((data) => {
+        var a = document.createElement("a");
+        var url = window.URL.createObjectURL(
+          new Blob([data], { type: "text/calendar" })
+        );
+
+        a.href = url;
+        a.download = filename;
+        document.body.append(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      });
+    }
+  );
+};
+
 const Invitation = () => {
   const params = useParams();
   const navigate = useNavigate();
@@ -30,7 +53,9 @@ const Invitation = () => {
         <PageHeader>You Are Invited</PageHeader>
         <EventCard {...invitation} />
       </div>
-      <ActionButton>Add to Calendar</ActionButton>
+      <ActionButton onClick={() => downloadEvent(params.id)}>
+        Add to Calendar
+      </ActionButton>
       <ActionButton onClick={() => navigate("rsvp")}>
         <div>RSVP ({invitation.myAttendance || "No Response"})</div>
         <div>Friend ({invitation.myFriend || "No Response"})</div>
