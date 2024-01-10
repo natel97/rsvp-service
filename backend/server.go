@@ -75,7 +75,7 @@ func main() {
 	}))
 
 	invitationController.HandleRoutes(server.Group("invitation"))
-	// eventRoutes.HandleRoutes(server.Group("event"))
+	// eventRoutes.HandleRoutes(server.Group("admin/event"))
 
 	fmt.Println("Starting, http://localhost:9083")
 

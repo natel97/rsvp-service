@@ -2,12 +2,28 @@ import { useEffect, useState } from "react";
 import { ActionButton, EventCard, Option, PageHeader } from "../components";
 import { useNavigate, useParams } from "react-router-dom";
 
+const submit = async (id, going, bringingAFriend) => {
+  return fetch(`${import.meta.env.VITE_API_URL}/invitation/${id}/rsvp`, {
+    method: "POST",
+    body: JSON.stringify({ going, bringingAFriend }),
+  });
+};
+
 const RSVP = () => {
   const navigate = useNavigate();
   const params = useParams();
   const [invitation, setInvitation] = useState(null);
   const [going, setGoing] = useState();
   const [friend, setFriend] = useState();
+
+  useEffect(() => {
+    if (invitation === null) {
+      return;
+    }
+
+    setGoing(invitation.going);
+    setFriend(invitation.bringingFriend);
+  }, [invitation]);
 
   useEffect(() => {
     if (!params.id) {
@@ -51,7 +67,14 @@ const RSVP = () => {
           setCurrent={setFriend}
         />
       </div>
-      <ActionButton style={{ marginBottom: "0" }}>Submit</ActionButton>
+      <ActionButton
+        onClick={() =>
+          submit(params.id, going, friend).then(() => navigate("./.."))
+        }
+        style={{ marginBottom: "0" }}
+      >
+        Submit
+      </ActionButton>
     </div>
   );
 };

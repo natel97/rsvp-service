@@ -1,11 +1,14 @@
 package invitation
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"rsvp/event"
 	"rsvp/rsvp"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type Controller struct {
@@ -19,11 +22,13 @@ func (ctrl *Controller) get(ctx *gin.Context) {
 	invitation, err := ctrl.repository.Get(id)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
+		fmt.Println(err)
 		return
 	}
 
 	if invitation == nil {
 		ctx.JSON(http.StatusNotFound, "Not Found")
+		fmt.Println(err)
 		return
 	}
 
@@ -31,11 +36,13 @@ func (ctrl *Controller) get(ctx *gin.Context) {
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
+		fmt.Println(err)
 		return
 	}
 
 	if event == nil {
 		ctx.JSON(http.StatusNotFound, "Event Not Found")
+		fmt.Println(err)
 		return
 	}
 
@@ -43,6 +50,7 @@ func (ctrl *Controller) get(ctx *gin.Context) {
 	responses, err := ctrl.rsvpRepository.GetEventRSVPs(event.ID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
+		fmt.Println(err)
 		return
 	}
 
@@ -64,11 +72,16 @@ func (ctrl *Controller) get(ctx *gin.Context) {
 		}
 	}
 
-	me, err := ctrl.rsvpRepository.Get(id)
+	me, err := ctrl.rsvpRepository.GetLatestRSVPByInvitation(invitation.ID)
 
-	if err != nil {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		ctx.JSON(http.StatusInternalServerError, err)
+		fmt.Println(err)
 		return
+	}
+
+	if me == nil {
+		me = &rsvp.RSVP{}
 	}
 
 	response := GetInvitationResponse{
@@ -84,8 +97,40 @@ func (ctrl *Controller) get(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
+func (ctrl *Controller) post(ctx *gin.Context) {
+	id, _ := ctx.Params.Get("id")
+
+	body := rsvp.UpdateRSVP{}
+	ctx.BindJSON(&body)
+
+	invitation, err := ctrl.repository.Get(id)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
+		fmt.Println(err)
+		return
+	}
+
+	response := rsvp.RSVP{
+		InvitationID:   id,
+		EventID:        invitation.EventID,
+		Going:          body.Going,
+		BringingFriend: body.BringingFriend,
+	}
+
+	_, err = ctrl.rsvpRepository.Create(response)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
+		fmt.Println(err)
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, "Success")
+}
+
 func (ctrl *Controller) HandleRoutes(group *gin.RouterGroup) {
 	group.GET("/:id", ctrl.get)
+	group.POST("/:id/rsvp", ctrl.post)
 }
 
 func NewController(repository *repository, eventRepository event.Repository, rsvpRepository rsvp.Repository) *Controller {

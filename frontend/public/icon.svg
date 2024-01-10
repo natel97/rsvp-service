@@ -1,0 +1,18 @@
+<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <view id="view-2">
+      <title>View 2</title>
+    </view>
+  </defs>
+  <rect x="0" y="0" width="256" height="256" style="stroke: rgb(0, 0, 0); fill: rgb(102, 204, 204);"></rect>
+  <g transform="matrix(1, 0, 0, 1, 0, 13.185994)">
+    <rect x="15.526" y="116.129" width="224.761" height="115.913" style="stroke: rgb(0, 0, 0); fill: rgb(0, 136, 136);"></rect>
+    <path d="M 128.3 -202.309 L 240.587 -116.6 L 16.013 -116.6 L 128.3 -202.309 Z" style="stroke: rgb(0, 0, 0); fill: rgb(0, 136, 136);" transform="matrix(1, 0, 0, -1, 0, 0)"></path>
+  </g>
+  <polyline style="stroke-width: 5px; fill: none; stroke: rgb(0, 85, 51);" points="189.491 84.153 211.792 100.942 243.472 53.142"></polyline>
+  <polyline style="fill: none; stroke-width: 6px; stroke: rgb(106, 0, 0);" points="18.486 53.966 72.054 105.062 45.682 79.514 20.134 106.298 70.406 53.142"></polyline>
+  <g transform="matrix(1, 0, 0, 1, 2.472374, -4.944746)">
+    <polyline style="fill: none; stroke-width: 5px; stroke: rgb(140, 6, 240);" points="111.199 34.27 119.99 26.222 132.352 23.885 144.988 29.338 149.109 41.28 140.868 48.549 127.956 55.819 127.132 68.8"></polyline>
+    <ellipse style="stroke: rgb(140, 6, 240); fill: rgb(140, 6, 240);" cx="127.682" cy="83.223" rx="3.296" ry="3.296"></ellipse>
+  </g>
+</svg>
