@@ -1,11 +1,60 @@
 import { styled } from "styled-components";
 import moment from "moment";
 
+const colors = {
+  success: {
+    light: "#AF7",
+    dark: "#053",
+  },
+  primary: {
+    light: "#6CC",
+    dark: "#088",
+  },
+  secondary: {
+    light: "#BDF",
+    dark: "#046",
+  },
+};
+
+const Radio = styled.input`
+  & + label {
+    box-shadow: 0px 0px 2px 2px rgba(255, 255, 255, 0.25);
+    border-radius: 8px;
+    padding: 8px;
+  }
+
+  &:checked + label {
+    background: ${colors.success.dark};
+  }
+
+  &:checked + label {
+    @media (prefers-color-scheme: light) {
+      background: ${colors.success.light};
+    }
+  }
+`;
+
 export const PageHeader = styled.h1`
-  background: #088;
-  padding: 2rem;
+  background: ${colors.primary.dark};
+  padding: 1.3rem;
   text-align: center;
-  font-size: 40px;
+  font-size: 38px;
+
+  @media (prefers-color-scheme: light) {
+    background: ${colors.primary.light};
+  }
+`;
+
+export const ActionButton = styled.button`
+  font-size: 1.5rem;
+  background: ${colors.success.dark};
+  margin: 8px 0;
+  padding: 1rem;
+  border-radius: 8px;
+
+  @media (prefers-color-scheme: light) {
+    background: ${colors.success.light};
+  }
 `;
 
 export const Card = styled.div`
@@ -14,15 +63,11 @@ export const Card = styled.div`
   text-align: left;
   border-radius: 8px;
   box-shadow: 0px 0px 4px 4px rgba(0, 0, 0, 0.25);
-  background: #046;
-`;
+  background: ${colors.secondary.dark};
 
-export const Action = styled.button`
-  text-align: left;
-  padding: 12px;
-  font-size: 1.5rem;
-  margin: 4px 16px;
-  background: #161616;
+  @media (prefers-color-scheme: light) {
+    background: ${colors.secondary.light};
+  }
 `;
 
 export const Option = ({
@@ -41,7 +86,7 @@ export const Option = ({
     >
       {options.map((option) => (
         <span key={option}>
-          <input
+          <Radio
             id={`${prefix}-${option}`}
             name={prefix}
             type="radio"

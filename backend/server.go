@@ -10,6 +10,7 @@ import (
 	"rsvp/rsvp"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -64,9 +65,19 @@ func main() {
 	server := gin.New()
 	server.Use(gin.Recovery())
 
+	server.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowMethods:     []string{"PUT", "GET", "DELETE", "POST"},
+		AllowHeaders:     []string{"Origin"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
 	invitationController.HandleRoutes(server.Group("invitation"))
 	// eventRoutes.HandleRoutes(server.Group("event"))
 
-	fmt.Println("Starting")
+	fmt.Println("Starting, http://localhost:9083")
+
 	server.Run(fmt.Sprintf(":%d", 9083))
 }
