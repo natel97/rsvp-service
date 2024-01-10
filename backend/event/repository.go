@@ -39,7 +39,7 @@ func (repo *repository) Create(e Event) (*Event, error) {
 func (repo *repository) Get(id string) (*Event, error) {
 	event := Event{}
 
-	err := repo.db.Find(&event, "id = ?", id).Error
+	err := repo.db.First(&event, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}

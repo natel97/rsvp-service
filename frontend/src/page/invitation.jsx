@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ActionButton, EventCard, PageHeader } from "../components";
 import { useParams, useNavigate } from "react-router-dom";
+import { storeInvitation } from "../utils/storeIDs";
 
 const downloadEvent = (id) => {
   fetch(`${import.meta.env.VITE_API_URL}/invitation/${id}/download`).then(
@@ -43,6 +44,8 @@ const Invitation = () => {
   if (invitation === null) {
     return <div>loading</div>;
   }
+
+  storeInvitation(params.id);
 
   return (
     <div

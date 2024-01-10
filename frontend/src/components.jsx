@@ -113,8 +113,8 @@ const Attendance = ({ yes, no, maybe }) => {
       }}
     >
       <div>🟢 Yes ({yes})</div>
-      <div>🔴 No ({no})</div>
       <div>🤷‍♂️ Maybe ({maybe})</div>
+      <div>🔴 No ({no})</div>
     </div>
   );
 };
@@ -136,17 +136,18 @@ const EmojiDetail = ({ emoji = "", children, size = "1rem" }) => {
 };
 
 export const EventCard = ({
-  title = "Game Night",
+  title = "- - -",
   date = Date.parse("23 Jan 2023 18:30:00 GMT+1100"),
-  street = "111 Flinders Street",
-  city = "Melbourne, VIC 3000",
-  attendance = { yes: 3, no: 2, maybe: 8 },
+  street = "- - -",
+  city = "- - - -, - - -  0000",
+  attendance = { yes: -1, no: -1, maybe: -1 },
+  onClick,
 }) => {
   const day = moment(date).format("MMMM Do YYYY");
   const time = moment(date).format("hh:mm A");
 
   return (
-    <Card>
+    <Card onClick={onClick}>
       <h2 style={{ fontSize: "2rem", textAlign: "center" }}>{title}</h2>
 
       <EmojiDetail size="2rem" emoji="📅">

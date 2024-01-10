@@ -39,7 +39,7 @@ func (repo *repository) Create(e Person) (*Person, error) {
 func (repo *repository) Get(id string) (*Person, error) {
 	person := Person{}
 
-	err := repo.db.Find(&person, "id = ?", id).Error
+	err := repo.db.First(&person, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}

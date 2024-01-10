@@ -2,6 +2,7 @@ import "./App.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Invitation from "./page/invitation";
 import RSVP from "./page/rsvp";
+import Home from "./page/home";
 
 const App = () => {
   return (
@@ -9,6 +10,7 @@ const App = () => {
       <Routes>
         <Route path="/invitation/:id" Component={Invitation} />
         <Route path="/invitation/:id/rsvp" Component={RSVP} />
+        <Route path="/" Component={Home} />
         <Route path="/*" Component={() => <div>Not Found</div>} />
       </Routes>
     </BrowserRouter>

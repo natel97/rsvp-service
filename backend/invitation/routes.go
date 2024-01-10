@@ -22,28 +22,27 @@ type Controller struct {
 func (ctrl *Controller) get(ctx *gin.Context) {
 	id, _ := ctx.Params.Get("id")
 	invitation, err := ctrl.repository.Get(id)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, err)
-		fmt.Println(err)
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		ctx.JSON(http.StatusNotFound, nil)
 		return
 	}
 
-	if invitation == nil {
-		ctx.JSON(http.StatusNotFound, "Not Found")
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
 		fmt.Println(err)
 		return
 	}
 
 	event, err := ctrl.eventRepository.Get(invitation.EventID)
 
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, err)
-		fmt.Println(err)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		ctx.JSON(http.StatusNotFound, nil)
 		return
 	}
 
-	if event == nil {
-		ctx.JSON(http.StatusNotFound, "Event Not Found")
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
 		fmt.Println(err)
 		return
 	}
@@ -108,6 +107,11 @@ func (ctrl *Controller) post(ctx *gin.Context) {
 
 	invitation, err := ctrl.repository.Get(id)
 
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		ctx.JSON(http.StatusNotFound, nil)
+		return
+	}
+
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		fmt.Println(err)
@@ -135,6 +139,11 @@ func (ctrl *Controller) getCalendarFile(ctx *gin.Context) {
 	id, _ := ctx.Params.Get("id")
 
 	invitation, err := ctrl.repository.Get(id)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		ctx.JSON(http.StatusNotFound, nil)
+		return
+	}
+
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		fmt.Println(err)
@@ -142,6 +151,12 @@ func (ctrl *Controller) getCalendarFile(ctx *gin.Context) {
 	}
 
 	event, err := ctrl.eventRepository.Get(invitation.EventID)
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		ctx.JSON(http.StatusNotFound, nil)
+		return
+	}
+
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		fmt.Println(err)

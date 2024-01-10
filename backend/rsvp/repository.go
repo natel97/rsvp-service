@@ -52,7 +52,7 @@ func (repo *repository) GetEventRSVPs(eventID string) ([]RSVP, error) {
 func (repo *repository) Get(id string) (*RSVP, error) {
 	rsvp := RSVP{}
 
-	err := repo.db.Find(&rsvp, "id = ?", id).Error
+	err := repo.db.First(&rsvp, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}

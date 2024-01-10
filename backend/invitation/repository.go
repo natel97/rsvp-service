@@ -40,7 +40,7 @@ func (repo *repository) Create(e Invitation) (*Invitation, error) {
 func (repo *repository) Get(id string) (*Invitation, error) {
 	invitation := Invitation{}
 
-	err := repo.db.Find(&invitation, "id = ?", id).Error
+	err := repo.db.First(&invitation, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
