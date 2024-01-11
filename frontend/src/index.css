@@ -5,13 +5,17 @@
 
   color-scheme: light dark;
   color: #eee;
-  background-color: #222;
+  background-color: #333;
   height: 100%;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  background-color: #222;
 }
 
 body {
@@ -28,6 +32,9 @@ h1 {
 @media (prefers-color-scheme: light) {
   :root {
     color: #222;
+    background-color: #eee;
+  }
+  .root {
     background-color: #eee;
   }
 }

@@ -1,4 +1,4 @@
-package event
+package person
 
 import (
 	"net/http"
@@ -33,15 +33,15 @@ func (ctrl *Controller) get(ctx *gin.Context) {
 }
 
 func (ctrl *Controller) post(ctx *gin.Context) {
-	event := Event{}
+	person := Person{}
 
-	err := ctx.ShouldBindJSON(&event)
+	err := ctx.ShouldBindJSON(&person)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		return
 	}
 
-	vals, err := ctrl.repository.Create(event)
+	vals, err := ctrl.repository.Create(person)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		return
@@ -52,15 +52,15 @@ func (ctrl *Controller) post(ctx *gin.Context) {
 
 func (ctrl *Controller) update(ctx *gin.Context) {
 	id, _ := ctx.Params.Get("id")
-	event := Event{}
+	person := Person{}
 
-	err := ctx.ShouldBindJSON(&event)
+	err := ctx.ShouldBindJSON(&person)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		return
 	}
 
-	vals, err := ctrl.repository.Update(id, event)
+	vals, err := ctrl.repository.Update(id, person)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		return
@@ -81,18 +81,12 @@ func (ctrl *Controller) delete(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, vals)
 }
 
-func (ctrl *Controller) getUsersInvitedToEvent(ctx *gin.Context) {
-	// id, _ := ctx.Params.Get("id")
-	ctx.JSON(404, nil)
-}
-
 func (ctrl *Controller) HandleRoutes(group *gin.RouterGroup) {
 	group.GET("", ctrl.getAll)
 	group.POST("", ctrl.post)
 	group.PUT("/:id", ctrl.update)
 	group.GET("/:id", ctrl.get)
 	group.DELETE("/:id", ctrl.delete)
-	group.GET("/:id/user", ctrl.getUsersInvitedToEvent)
 }
 
 func NewController(repository *repository) *Controller {

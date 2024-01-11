@@ -16,7 +16,16 @@ const colors = {
   },
 };
 
-const Radio = styled.input`
+export const TextInput = styled.input`
+  border: 1px solid #ccc;
+  width: 80%;
+  margin: 16px 0;
+  padding: 12px;
+  font-size: 1.5rem;
+  border-radius: 8px;
+`;
+
+export const Radio = styled.input`
   & + label {
     box-shadow: 0px 0px 2px 2px rgba(255, 255, 255, 0.25);
     border-radius: 8px;
@@ -135,6 +144,9 @@ const EmojiDetail = ({ emoji = "", children, size = "1rem" }) => {
   );
 };
 
+export const DAY_FORMAT = "MMMM Do YYYY";
+export const TIME_FORMAT = "hh:mm A";
+
 export const EventCard = ({
   title = "- - -",
   date = Date.parse("23 Jan 2023 18:30:00 GMT+1100"),
@@ -143,8 +155,8 @@ export const EventCard = ({
   attendance = { yes: -1, no: -1, maybe: -1 },
   onClick,
 }) => {
-  const day = moment(date).format("MMMM Do YYYY");
-  const time = moment(date).format("hh:mm A");
+  const day = moment(date).format(DAY_FORMAT);
+  const time = moment(date).format(TIME_FORMAT);
 
   return (
     <Card onClick={onClick}>

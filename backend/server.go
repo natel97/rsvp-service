@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"rsvp/event"
 	"rsvp/invitation"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -56,28 +58,56 @@ func main() {
 	invitationRepository := invitation.NewRepository(db)
 	personRepository := person.NewRepository(db)
 	invitationController := invitation.NewController(invitationRepository, eventRepository, rsvpRepository)
+	eventController := event.NewController(eventRepository)
+	personController := person.NewController(personRepository)
 
 	createTestData(personRepository, eventRepository, invitationRepository, false)
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 	gin.SetMode(gin.ReleaseMode)
-	server := gin.New()
-	server.Use(gin.Recovery())
-
+	server := gin.Default()
 	server.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"PUT", "GET", "DELETE", "POST"},
-		AllowHeaders:     []string{"Origin"},
+		AllowHeaders:     []string{"Origin", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length", "Content-Disposition"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+	config := viper.New()
+	config.SetConfigName(".env.local")
+	config.SetConfigType("env")
+	config.AddConfigPath(".")
 
+	c := map[string]string{}
+
+	err = config.ReadInConfig()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = config.Unmarshal(&c)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	adminRoutes := server.Group("admin")
+	adminRoutes.Use(cors.Default())
 	invitationController.HandleRoutes(server.Group("invitation"))
-	// eventRoutes.HandleRoutes(server.Group("admin/event"))
+
+	adminRoutes.Use(func(ctx *gin.Context) {
+		fmt.Println(ctx.Request.URL)
+		auth := ctx.Request.Header.Get("Authorization")
+		if auth != c["api_key"] {
+			ctx.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+	})
+
+	eventController.HandleRoutes(adminRoutes.Group("event"))
+	personController.HandleRoutes(adminRoutes.Group("people"))
 
 	fmt.Println("Starting, http://localhost:9083")
-
 	server.Run(fmt.Sprintf(":%d", 9083))
 }
