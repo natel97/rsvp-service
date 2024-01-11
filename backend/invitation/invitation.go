@@ -2,17 +2,7 @@ package invitation
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
-
-type Invitation struct {
-	gorm.Model
-
-	ID      string
-	UserID  string
-	EventID string
-}
 
 type Attendance struct {
 	Yes   uint `json:"yes"`

@@ -7,6 +7,7 @@ import (
 	"os"
 	"rsvp/event"
 	"rsvp/invitation"
+	"rsvp/invitation/types"
 	"rsvp/person"
 	"rsvp/rsvp"
 	"time"
@@ -18,7 +19,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func createTestData(personRepository person.Repository, eventRepository event.Repository, invitationRepository invitation.Repository, run bool) {
+func createTestData(personRepository person.Repository, eventRepository event.Repository, invitationRepository types.Repository, run bool) {
 	if !run {
 		return
 	}
@@ -37,9 +38,9 @@ func createTestData(personRepository person.Repository, eventRepository event.Re
 		City:   "Melbourne, VIC 3000",
 	})
 
-	invitation, _ := invitationRepository.Create(invitation.Invitation{
-		UserID:  p.ID,
-		EventID: e.ID,
+	invitation, _ := invitationRepository.Create(types.Invitation{
+		PersonID: p.ID,
+		EventID:  e.ID,
 	})
 
 	fmt.Println(invitation)
@@ -51,14 +52,14 @@ func main() {
 		panic("failed to connect database")
 	}
 
-	db.AutoMigrate(&event.Event{}, &invitation.Invitation{}, &person.Person{}, &rsvp.RSVP{})
+	db.AutoMigrate(&event.Event{}, &types.Invitation{}, &person.Person{}, &rsvp.RSVP{})
 
 	eventRepository := event.NewRepository(db)
 	rsvpRepository := rsvp.NewRepository(db)
 	invitationRepository := invitation.NewRepository(db)
 	personRepository := person.NewRepository(db)
 	invitationController := invitation.NewController(invitationRepository, eventRepository, rsvpRepository)
-	eventController := event.NewController(eventRepository)
+	eventController := event.NewController(eventRepository, invitationRepository, personRepository)
 	personController := person.NewController(personRepository)
 
 	createTestData(personRepository, eventRepository, invitationRepository, false)
@@ -94,7 +95,6 @@ func main() {
 
 	adminRoutes := server.Group("admin")
 	adminRoutes.Use(cors.Default())
-	invitationController.HandleRoutes(server.Group("invitation"))
 
 	adminRoutes.Use(func(ctx *gin.Context) {
 		fmt.Println(ctx.Request.URL)
@@ -105,6 +105,8 @@ func main() {
 		}
 	})
 
+	invitationController.HandleRoutes(server.Group("invitation"))
+	invitationController.HandleAdminRoutes(adminRoutes.Group("invitation"))
 	eventController.HandleRoutes(adminRoutes.Group("event"))
 	personController.HandleRoutes(adminRoutes.Group("people"))
 

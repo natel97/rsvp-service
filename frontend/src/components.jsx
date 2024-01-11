@@ -153,6 +153,7 @@ export const EventCard = ({
   street = "- - -",
   city = "- - - -, - - -  0000",
   attendance = { yes: -1, no: -1, maybe: -1 },
+  description = "-----",
   onClick,
 }) => {
   const day = moment(date).format(DAY_FORMAT);
@@ -171,6 +172,8 @@ export const EventCard = ({
         <h3>{street}</h3>
         <h3>{city}</h3>
       </EmojiDetail>
+
+      <div>{description}</div>
       {attendance && <Attendance {...attendance} />}
     </Card>
   );

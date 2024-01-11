@@ -11,11 +11,31 @@ const Card = styled.div`
   cursor: pointer;
 `;
 
-export const PersonCard = ({ First, Last, onClick }) => {
+export const PersonCard = ({ First, Last, InvitationID, onClick }) => {
   return (
     <Card onClick={onClick}>
-      <div>
-        {First} {Last}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "space-between",
+        }}
+      >
+        <div>
+          {First} {Last}
+        </div>
+        {InvitationID && (
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              navigator.clipboard.writeText(
+                `${window.location.origin}/invitation/${InvitationID}`
+              );
+            }}
+          >
+            [Copy]
+          </div>
+        )}
       </div>
     </Card>
   );

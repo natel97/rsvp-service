@@ -1,13 +1,18 @@
 package event
 
 import (
+	"fmt"
 	"net/http"
+	types "rsvp/invitation/types"
+	"rsvp/person"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Controller struct {
-	repository *repository
+	repository           *repository
+	invitationRepository types.Repository
+	personRepository     person.Repository
 }
 
 func (ctrl *Controller) getAll(ctx *gin.Context) {
@@ -81,9 +86,18 @@ func (ctrl *Controller) delete(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, vals)
 }
 
-func (ctrl *Controller) getUsersInvitedToEvent(ctx *gin.Context) {
-	// id, _ := ctx.Params.Get("id")
-	ctx.JSON(404, nil)
+func (ctrl *Controller) getPeopleInvitedToEvent(ctx *gin.Context) {
+	id, _ := ctx.Params.Get("id")
+
+	people, err := ctrl.personRepository.GetHavingEvent(id)
+
+	if err != nil {
+		fmt.Println(err)
+		ctx.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, people)
 }
 
 func (ctrl *Controller) HandleRoutes(group *gin.RouterGroup) {
@@ -92,11 +106,13 @@ func (ctrl *Controller) HandleRoutes(group *gin.RouterGroup) {
 	group.PUT("/:id", ctrl.update)
 	group.GET("/:id", ctrl.get)
 	group.DELETE("/:id", ctrl.delete)
-	group.GET("/:id/user", ctrl.getUsersInvitedToEvent)
+	group.GET("/:id/people", ctrl.getPeopleInvitedToEvent)
 }
 
-func NewController(repository *repository) *Controller {
+func NewController(repository *repository, invitationRepository types.Repository, personRepository person.Repository) *Controller {
 	return &Controller{
-		repository: repository,
+		repository:           repository,
+		invitationRepository: invitationRepository,
+		personRepository:     personRepository,
 	}
 }

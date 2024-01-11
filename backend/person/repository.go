@@ -21,6 +21,7 @@ type Repository interface {
 	GetAll() ([]Person, error)
 	Delete(id string) (*Person, error)
 	Update(id string, details Person) (*Person, error)
+	GetHavingEvent(eventID string) ([]InvitedPerson, error)
 }
 
 func (repo *repository) Create(e Person) (*Person, error) {
@@ -67,6 +68,31 @@ func (repo *repository) Delete(id string) (*Person, error) {
 	}
 
 	return &person, nil
+}
+
+type InvitedPerson struct {
+	InvitationID string
+	Person
+}
+
+func (repo *repository) GetHavingEvent(eventID string) ([]InvitedPerson, error) {
+	people := []InvitedPerson{}
+
+	err := repo.db.Raw(`SELECT p.*,
+	i.id as invitation_id
+	FROM people p
+	LEFT JOIN (
+		SELECT * FROM invitations i
+		WHERE event_id = ?
+	) i
+	ON p.id = i.person_id
+	`, eventID).Scan(&people).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return people, nil
 }
 
 func (repo *repository) Update(id string, details Person) (*Person, error) {

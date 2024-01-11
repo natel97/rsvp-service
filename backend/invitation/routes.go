@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"rsvp/event"
+	"rsvp/invitation/types"
 	"rsvp/rsvp"
 	"time"
 
@@ -99,6 +100,37 @@ func (ctrl *Controller) get(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
+type createBody struct {
+	EventID   string `json:"eventID"`
+	PersonIdD string `json:"personID"`
+}
+
+func (ctrl *Controller) create(ctx *gin.Context) {
+	body := createBody{}
+
+	err := ctx.BindJSON(&body)
+
+	if err != nil {
+		fmt.Println(err)
+		ctx.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	create := types.Invitation{
+		PersonID: body.PersonIdD,
+		EventID:  body.EventID,
+	}
+	val, err := ctrl.repository.Create(create)
+
+	if err != nil {
+		fmt.Println(err)
+		ctx.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, val)
+}
+
 func (ctrl *Controller) post(ctx *gin.Context) {
 	id, _ := ctx.Params.Get("id")
 
@@ -186,6 +218,10 @@ func (ctrl *Controller) HandleRoutes(group *gin.RouterGroup) {
 	group.GET("/:id", ctrl.get)
 	group.POST("/:id/rsvp", ctrl.post)
 	group.GET("/:id/download", ctrl.getCalendarFile)
+}
+
+func (ctrl *Controller) HandleAdminRoutes(group *gin.RouterGroup) {
+	group.POST("", ctrl.create)
 }
 
 func NewController(repository *repository, eventRepository event.Repository, rsvpRepository rsvp.Repository) *Controller {

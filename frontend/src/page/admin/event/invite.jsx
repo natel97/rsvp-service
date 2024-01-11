@@ -4,12 +4,24 @@ import { getAuthToken } from "../auth";
 import { useEffect, useState } from "react";
 import { PersonCard } from "../component";
 
+const invitePerson = (eventID, personID) => {
+  const apiKey = getAuthToken();
+  fetch(`${import.meta.env.VITE_API_URL}/admin/invitation`, {
+    method: "POST",
+    headers: { Authorization: apiKey },
+    body: JSON.stringify({
+      eventID,
+      personID,
+    }),
+  });
+};
+
 const Invite = () => {
   const apiKey = getAuthToken();
   const { id } = useParams();
   const [people, setPeople] = useState([]);
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/admin/people`, {
+    fetch(`${import.meta.env.VITE_API_URL}/admin/event/${id}/people`, {
       headers: { Authorization: apiKey },
     })
       .then((val) => val.json())
@@ -20,7 +32,11 @@ const Invite = () => {
     <div>
       <PageHeader>Invite to Event</PageHeader>
       {people.map((person) => (
-        <PersonCard key={person.id} {...person} />
+        <PersonCard
+          key={person.ID}
+          {...person}
+          onClick={() => !person.InvitationID && invitePerson(id, person.ID)}
+        />
       ))}
     </div>
   );
