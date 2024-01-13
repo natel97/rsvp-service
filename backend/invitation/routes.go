@@ -236,6 +236,16 @@ func (ctrl *Controller) getCalendarFile(ctx *gin.Context) {
 	ctx.Data(http.StatusOK, "application/octet-stream", []byte(calString))
 }
 
+func (ctrl *Controller) delete(ctx *gin.Context) {
+	id, _ := ctx.Params.Get("id")
+	err := ctrl.repository.Delete(id)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
+	}
+
+	ctx.Status(http.StatusAccepted)
+}
+
 func (ctrl *Controller) HandleRoutes(group *gin.RouterGroup) {
 	group.GET("/:id", ctrl.get)
 	group.POST("/:id/rsvp", ctrl.post)
@@ -244,6 +254,7 @@ func (ctrl *Controller) HandleRoutes(group *gin.RouterGroup) {
 
 func (ctrl *Controller) HandleAdminRoutes(group *gin.RouterGroup) {
 	group.POST("", ctrl.create)
+	group.DELETE(":id", ctrl.delete)
 	group.POST("group", ctrl.inviteGroup)
 }
 

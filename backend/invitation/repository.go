@@ -91,15 +91,15 @@ func (repo *repository) GetByEvent(eventID string) ([]Invitation, error) {
 	return invitation, nil
 }
 
-func (repo *repository) Delete(id string) (*Invitation, error) {
+func (repo *repository) Delete(id string) error {
 	invitation := Invitation{}
 
 	err := repo.db.Delete(&invitation, "id = ?", id).Error
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &invitation, nil
+	return nil
 }
 
 func (repo *repository) Update(id string, details Invitation) (*Invitation, error) {

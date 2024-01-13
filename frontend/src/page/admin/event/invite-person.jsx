@@ -16,6 +16,14 @@ const invitePerson = (eventID, personID) => {
   });
 };
 
+const revokeInvite = (invitationID) => {
+  const apiKey = getAuthToken();
+  fetch(`${import.meta.env.VITE_API_URL}/admin/invitation/${invitationID}`, {
+    method: "DELETE",
+    headers: { Authorization: apiKey },
+  });
+};
+
 const InvitePerson = () => {
   const apiKey = getAuthToken();
   const { id } = useParams();
@@ -35,7 +43,11 @@ const InvitePerson = () => {
         <PersonCard
           key={person.ID}
           {...person}
-          onClick={() => !person.InvitationID && invitePerson(id, person.ID)}
+          onClick={() =>
+            person.InvitationID
+              ? revokeInvite(person.InvitationID)
+              : invitePerson(id, person.ID)
+          }
         />
       ))}
     </div>

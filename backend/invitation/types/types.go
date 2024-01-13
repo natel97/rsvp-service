@@ -15,6 +15,6 @@ type Repository interface {
 	Get(id string) (*Invitation, error)
 	GetAll() ([]Invitation, error)
 	GetByEvent(eventID string) ([]Invitation, error)
-	Delete(id string) (*Invitation, error)
+	Delete(id string) error
 	Update(id string, details Invitation) (*Invitation, error)
 }
