@@ -11,7 +11,7 @@ const Card = styled.div`
   cursor: pointer;
 `;
 
-export const PersonCard = ({ First, Last, InvitationID, onClick }) => {
+export const PersonCard = ({ First, Last, InvitationID, InGroup, onClick }) => {
   return (
     <Card onClick={onClick}>
       <div
@@ -36,6 +36,23 @@ export const PersonCard = ({ First, Last, InvitationID, onClick }) => {
             [Copy]
           </div>
         )}
+        {InGroup && <div>[In Group]</div>}
+      </div>
+    </Card>
+  );
+};
+
+export const GroupCard = ({ Name, onClick }) => {
+  return (
+    <Card onClick={onClick}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "space-between",
+        }}
+      >
+        <div>{Name}</div>
       </div>
     </Card>
   );

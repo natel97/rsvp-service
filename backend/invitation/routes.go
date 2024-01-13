@@ -131,6 +131,28 @@ func (ctrl *Controller) create(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, val)
 }
 
+func (ctrl *Controller) inviteGroup(ctx *gin.Context) {
+	body := InviteGroup{}
+
+	err := ctx.BindJSON(&body)
+
+	if err != nil {
+		fmt.Println(err)
+		ctx.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	err = ctrl.repository.InviteGroup(body)
+
+	if err != nil {
+		fmt.Println(err)
+		ctx.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, "")
+}
+
 func (ctrl *Controller) post(ctx *gin.Context) {
 	id, _ := ctx.Params.Get("id")
 
@@ -222,6 +244,7 @@ func (ctrl *Controller) HandleRoutes(group *gin.RouterGroup) {
 
 func (ctrl *Controller) HandleAdminRoutes(group *gin.RouterGroup) {
 	group.POST("", ctrl.create)
+	group.POST("group", ctrl.inviteGroup)
 }
 
 func NewController(repository *repository, eventRepository event.Repository, rsvpRepository rsvp.Repository) *Controller {

@@ -19,15 +19,43 @@ func NewRepository(db *gorm.DB) *repository {
 
 func (repo *repository) Create(e Invitation) (*Invitation, error) {
 	id := uuid.New()
-	e.ID = id.String()
 
-	err := repo.db.Create(&e).Error
+	err := repo.db.Where(e).Attrs(Invitation{ID: id.String()}).FirstOrCreate(&e).Error
 
 	if err != nil {
 		return nil, err
 	}
 
 	return &e, nil
+}
+
+type InviteGroup struct {
+	GroupID string
+	EventID string
+}
+type UserID string
+
+func (repo *repository) InviteGroup(e InviteGroup) error {
+	personIDs := []UserID{}
+
+	err := repo.db.Table("person_groups").Select("person_id").Find(&personIDs, "group_id = ? AND deleted_at IS NULL", e.GroupID).Error
+
+	if err != nil {
+		return err
+	}
+
+	for _, personID := range personIDs {
+		_, err := repo.Create(Invitation{
+			PersonID: string(personID),
+			EventID:  e.EventID,
+		})
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (repo *repository) Get(id string) (*Invitation, error) {

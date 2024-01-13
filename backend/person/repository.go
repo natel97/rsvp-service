@@ -82,8 +82,9 @@ func (repo *repository) GetHavingEvent(eventID string) ([]InvitedPerson, error) 
 	i.id as invitation_id
 	FROM people p
 	LEFT JOIN (
-		SELECT * FROM invitations i
+		SELECT * FROM invitations
 		WHERE event_id = ?
+		AND deleted_at IS NULL
 	) i
 	ON p.id = i.person_id
 	`, eventID).Scan(&people).Error

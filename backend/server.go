@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"os"
 	"rsvp/event"
+	"rsvp/group"
 	"rsvp/invitation"
 	"rsvp/invitation/types"
 	"rsvp/person"
+	persongroup "rsvp/person_group"
 	"rsvp/rsvp"
 	"time"
 
@@ -52,15 +54,19 @@ func main() {
 		panic("failed to connect database")
 	}
 
-	db.AutoMigrate(&event.Event{}, &types.Invitation{}, &person.Person{}, &rsvp.RSVP{})
+	db.AutoMigrate(&event.Event{}, &types.Invitation{}, &person.Person{}, &rsvp.RSVP{}, &group.Group{}, &persongroup.PersonGroup{})
 
 	eventRepository := event.NewRepository(db)
 	rsvpRepository := rsvp.NewRepository(db)
 	invitationRepository := invitation.NewRepository(db)
 	personRepository := person.NewRepository(db)
+	groupRepository := group.NewRepository(db)
+	pgRepository := persongroup.NewRepository(db)
+
 	invitationController := invitation.NewController(invitationRepository, eventRepository, rsvpRepository)
 	eventController := event.NewController(eventRepository, invitationRepository, personRepository)
 	personController := person.NewController(personRepository)
+	groupController := group.NewController(groupRepository, pgRepository)
 
 	createTestData(personRepository, eventRepository, invitationRepository, false)
 
@@ -109,6 +115,7 @@ func main() {
 	invitationController.HandleAdminRoutes(adminRoutes.Group("invitation"))
 	eventController.HandleRoutes(adminRoutes.Group("event"))
 	personController.HandleRoutes(adminRoutes.Group("people"))
+	groupController.HandleRoutes(adminRoutes.Group("group"))
 
 	fmt.Println("Starting, http://localhost:9083")
 	server.Run(fmt.Sprintf(":%d", 9083))

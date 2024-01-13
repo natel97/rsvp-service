@@ -35,6 +35,9 @@ const AdminAuth = () => {
       <ActionButton onClick={() => navigate("people")}>
         Manage People
       </ActionButton>
+      <ActionButton onClick={() => navigate("group")}>
+        Manage Groups
+      </ActionButton>
     </div>
   );
 };
