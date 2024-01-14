@@ -100,6 +100,20 @@ func (ctrl *Controller) getPeopleInvitedToEvent(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, people)
 }
 
+func (ctrl *Controller) getAttendance(ctx *gin.Context) {
+	id, _ := ctx.Params.Get("id")
+
+	attendance, err := ctrl.repository.GetAttendance(id)
+
+	if err != nil {
+		fmt.Println(err)
+		ctx.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, attendance)
+}
+
 func (ctrl *Controller) HandleRoutes(group *gin.RouterGroup) {
 	group.GET("", ctrl.getAll)
 	group.POST("", ctrl.post)
@@ -107,6 +121,7 @@ func (ctrl *Controller) HandleRoutes(group *gin.RouterGroup) {
 	group.GET("/:id", ctrl.get)
 	group.DELETE("/:id", ctrl.delete)
 	group.GET("/:id/people", ctrl.getPeopleInvitedToEvent)
+	group.GET("/:id/attendance", ctrl.getAttendance)
 }
 
 func NewController(repository *repository, invitationRepository types.Repository, personRepository person.Repository) *Controller {

@@ -16,13 +16,31 @@ const colors = {
   },
 };
 
-export const TextInput = styled.input`
+const TextInputContainer = styled.div`
+  margin: 12px 8px;
+`;
+
+export const TextInput = (params) => {
+  return (
+    <TextInputContainer>
+      {params.area ? <RawTextArea {...params} /> : <RawTextInput {...params} />}
+    </TextInputContainer>
+  );
+};
+
+const commonTextStyles = `
   border: 1px solid #ccc;
-  width: 80%;
-  margin: 16px 0;
+  width: 100%;
   padding: 12px;
   font-size: 1.5rem;
-  border-radius: 8px;
+  border-radius: 8px;`;
+
+const RawTextInput = styled.input`
+  ${commonTextStyles}
+`;
+
+const RawTextArea = styled.textarea`
+  ${commonTextStyles}
 `;
 
 export const Radio = styled.input`

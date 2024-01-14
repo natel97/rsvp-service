@@ -1,6 +1,8 @@
 package event
 
 import (
+	"rsvp/person"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -11,6 +13,7 @@ type Repository interface {
 	GetAll() ([]Event, error)
 	Delete(id string) (*Event, error)
 	Update(id string, details Event) (*Event, error)
+	GetAttendance(eventID string) (*EventAttendance, error)
 }
 
 type repository struct {
@@ -67,6 +70,60 @@ func (repo *repository) Delete(id string) (*Event, error) {
 	}
 
 	return &event, nil
+}
+
+type PersonAttendance struct {
+	person.Person
+	Going          string
+	BringingFriend string
+	InvitationID   string
+}
+
+type EventAttendance struct {
+	Event
+	Attendance []PersonAttendance
+}
+
+func (repo *repository) GetAttendance(eventID string) (*EventAttendance, error) {
+	event, err := repo.Get(eventID)
+	if err != nil {
+		return nil, err
+	}
+
+	attendance := EventAttendance{Event: *event, Attendance: []PersonAttendance{}}
+
+	err = repo.db.Raw(`SELECT p.*,
+	i.id as invitation_id,
+	r.going,
+	r.bringing_friend
+	FROM people p
+	INNER JOIN (
+		SELECT * FROM invitations
+		WHERE event_id = ?
+		AND deleted_at IS NULL
+	) i
+	ON p.id = i.person_id
+
+	LEFT JOIN (
+		SELECT r.* FROM (
+			SELECT max(created_at) created_at, invitation_id
+			FROM rsvps
+			WHERE event_id = ?
+			GROUP BY invitation_id
+		) AS newest
+		INNER JOIN rsvps r
+		ON newest.created_at = r.created_at
+		AND newest.invitation_id = r.invitation_id
+	) r
+
+	ON r.invitation_id = i.id
+	`, eventID, eventID).Scan(&attendance.Attendance).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &attendance, nil
 }
 
 func (repo *repository) Update(id string, details Event) (*Event, error) {

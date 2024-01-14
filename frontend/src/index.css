@@ -14,6 +14,16 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+:root {
+  box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
 #root {
   background-color: #222;
 }

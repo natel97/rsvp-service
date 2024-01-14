@@ -11,9 +11,24 @@ const Card = styled.div`
   cursor: pointer;
 `;
 
-export const PersonCard = ({ First, Last, InvitationID, InGroup, onClick }) => {
+const OptionEmoji = {
+  Yes: "🟢",
+  Maybe: "🤷‍♂️",
+  No: "🔴",
+  "": "🆕",
+};
+
+export const PersonCard = ({
+  First,
+  Last,
+  InvitationID,
+  InGroup,
+  onClick,
+  Going,
+  BringingFriend,
+}) => {
   return (
-    <Card onClick={onClick}>
+    <Card onClick={onClick} style={{ fontSize: "1.4rem" }}>
       <div
         style={{
           display: "flex",
@@ -24,19 +39,26 @@ export const PersonCard = ({ First, Last, InvitationID, InGroup, onClick }) => {
         <div>
           {First} {Last}
         </div>
-        {InvitationID && (
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              navigator.clipboard.writeText(
-                `${window.location.origin}/invitation/${InvitationID}`
-              );
-            }}
-          >
-            [Copy]
-          </div>
-        )}
-        {InGroup && <div>[In Group]</div>}
+        <div style={{ display: "flex" }}>
+          {InGroup && <div>[In Group]</div>}
+          {(Going !== undefined || BringingFriend !== undefined) && (
+            <div>
+              {OptionEmoji[Going]}(+1{OptionEmoji[BringingFriend]})
+            </div>
+          )}
+          {InvitationID && (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(
+                  `${window.location.origin}/invitation/${InvitationID}`
+                );
+              }}
+            >
+              (📋)
+            </div>
+          )}
+        </div>
       </div>
     </Card>
   );

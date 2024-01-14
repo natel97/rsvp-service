@@ -32,15 +32,20 @@ func (repo *repository) GetEventRSVPs(eventID string) ([]RSVP, error) {
 	rsvp := []RSVP{}
 
 	err := repo.db.Raw(`
-	SELECT r.* FROM (
+	SELECT r.*
+	FROM invitations i
+	INNER JOIN (
 		SELECT max(created_at) created_at, invitation_id
 	    FROM rsvps
 		WHERE event_id = ?
 		GROUP BY invitation_id
-	) AS newest
+		) newest
+	ON newest.invitation_id = i.id
 	INNER JOIN rsvps r
-	ON newest.created_at = r.created_at
-		AND newest.invitation_id = r.invitation_id`, eventID).
+	ON r.invitation_id = newest.invitation_id
+	AND r.created_at = newest.created_at
+	WHERE i.deleted_at IS NULL
+	`, eventID).
 		Scan(&rsvp).Error
 	if err != nil {
 		return nil, err
