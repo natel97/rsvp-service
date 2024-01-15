@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ActionButton, PageHeader, TextInput } from "../../components";
 import { useNavigate } from "react-router-dom";
+import { NotifyButton } from "../../components/notify";
 
 const authTokenKey = "auth-token";
 
@@ -38,6 +39,9 @@ const AdminAuth = () => {
       <ActionButton onClick={() => navigate("group")}>
         Manage Groups
       </ActionButton>
+      <NotifyButton
+        url={`${import.meta.env.VITE_API_URL}/admin/notify/subscribe`}
+      />
     </div>
   );
 };

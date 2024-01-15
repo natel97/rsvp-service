@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	types "rsvp/invitation/types"
+	"rsvp/notifications"
 	"rsvp/person"
 
 	"github.com/gin-gonic/gin"
@@ -13,6 +14,7 @@ type Controller struct {
 	repository           *repository
 	invitationRepository types.Repository
 	personRepository     person.Repository
+	notifify             *notifications.Service
 }
 
 func (ctrl *Controller) getAll(ctx *gin.Context) {
@@ -71,6 +73,8 @@ func (ctrl *Controller) update(ctx *gin.Context) {
 		return
 	}
 
+	ctrl.notifify.NotifyEvent(id, "push-notify", "Event Update!")
+
 	ctx.JSON(http.StatusOK, vals)
 }
 
@@ -82,6 +86,8 @@ func (ctrl *Controller) delete(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, err)
 		return
 	}
+
+	ctrl.notifify.NotifyEvent(id, "push-notify", "An event has been deleted :(")
 
 	ctx.JSON(http.StatusOK, vals)
 }
@@ -124,10 +130,11 @@ func (ctrl *Controller) HandleRoutes(group *gin.RouterGroup) {
 	group.GET("/:id/attendance", ctrl.getAttendance)
 }
 
-func NewController(repository *repository, invitationRepository types.Repository, personRepository person.Repository) *Controller {
+func NewController(repository *repository, invitationRepository types.Repository, personRepository person.Repository, notify *notifications.Service) *Controller {
 	return &Controller{
 		repository:           repository,
 		invitationRepository: invitationRepository,
 		personRepository:     personRepository,
+		notifify:             notify,
 	}
 }

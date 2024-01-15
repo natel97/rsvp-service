@@ -14,16 +14,28 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="full-height full-width">
+    <div
+      style={{ display: "flex", flexDirection: "column" }}
+      className="full-height full-width"
+    >
       <PageHeader>Your Events</PageHeader>
-      {ids.map((id) => (
-        <DelayedCard
-          onClick={() => navigate(`/invitation/${id}`)}
-          id={id}
-          key={id}
-        />
-      ))}
+      <div style={{ overflow: "auto" }}>
+        {ids.map((id) => (
+          <DelayedCard
+            onClick={() => navigate(`/invitation/${id}`)}
+            id={id}
+            key={id}
+          />
+        ))}
+      </div>
       {!ids.length && <Card>No Invitations</Card>}
+      <a
+        target="_blank"
+        href="https://github.com/natel97/rsvp-service"
+        rel="noreferrer"
+      >
+        GitHub
+      </a>
     </div>
   );
 };

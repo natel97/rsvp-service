@@ -19,4 +19,5 @@ type GetInvitationResponse struct {
 	MyAttendance string     `json:"myAttendance"`
 	MyFriend     string     `json:"myFriend"`
 	Description  string     `json:"description"`
+	Subscribed   bool       `json:"subscribed"`
 }

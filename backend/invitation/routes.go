@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"rsvp/event"
 	"rsvp/invitation/types"
+	"rsvp/notifications"
 	"rsvp/rsvp"
 	"time"
 
@@ -18,6 +19,7 @@ type Controller struct {
 	repository      *repository
 	eventRepository event.Repository
 	rsvpRepository  rsvp.Repository
+	notifications   *notifications.Service
 }
 
 func (ctrl *Controller) get(ctx *gin.Context) {
@@ -86,6 +88,8 @@ func (ctrl *Controller) get(ctx *gin.Context) {
 		me = &rsvp.RSVP{}
 	}
 
+	subscribed := ctrl.notifications.GetIsSubscribed(id)
+
 	response := GetInvitationResponse{
 		Title:        event.Title,
 		Date:         event.Date,
@@ -95,6 +99,7 @@ func (ctrl *Controller) get(ctx *gin.Context) {
 		MyAttendance: me.Going,
 		MyFriend:     me.BringingFriend,
 		Description:  event.Description,
+		Subscribed:   subscribed,
 	}
 
 	ctx.JSON(http.StatusOK, response)
@@ -186,6 +191,8 @@ func (ctrl *Controller) post(ctx *gin.Context) {
 		return
 	}
 
+	ctrl.notifications.NotifyGroup("admin", "push-notify", "RSVP: Going"+body.Going+"Friend: "+body.BringingFriend)
+
 	ctx.JSON(http.StatusCreated, "Success")
 }
 
@@ -246,10 +253,42 @@ func (ctrl *Controller) delete(ctx *gin.Context) {
 	ctx.Status(http.StatusAccepted)
 }
 
+type ReservationSubscriptionInput struct {
+	Subscription string `json:"subscription"`
+}
+
+func (ctrl *Controller) unsubscribe(ctx *gin.Context) {
+	id, _ := ctx.Params.Get("id")
+
+	err := ctrl.notifications.RemoveByInvitation(id)
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+	}
+
+	ctx.JSON(http.StatusAccepted, "deleted")
+}
+
+func (ctrl *Controller) subscribe(ctx *gin.Context) {
+	id, _ := ctx.Params.Get("id")
+	rsi := ReservationSubscriptionInput{}
+	err := ctx.BindJSON(&rsi)
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		fmt.Println(err)
+		return
+	}
+
+	ctrl.notifications.RegisterForInvitation(id, rsi.Subscription, "invited")
+	ctrl.notifications.Notify(rsi.Subscription, "push-notify", "Subscription Successful!")
+	ctrl.notifications.NotifyGroup("admin", "push-notify", "New Subscriber: "+id)
+}
+
 func (ctrl *Controller) HandleRoutes(group *gin.RouterGroup) {
 	group.GET("/:id", ctrl.get)
 	group.POST("/:id/rsvp", ctrl.post)
 	group.GET("/:id/download", ctrl.getCalendarFile)
+	group.POST("/:id/subscribe", ctrl.subscribe)
+	group.DELETE("/:id/subscribe", ctrl.unsubscribe)
 }
 
 func (ctrl *Controller) HandleAdminRoutes(group *gin.RouterGroup) {
@@ -258,10 +297,11 @@ func (ctrl *Controller) HandleAdminRoutes(group *gin.RouterGroup) {
 	group.POST("group", ctrl.inviteGroup)
 }
 
-func NewController(repository *repository, eventRepository event.Repository, rsvpRepository rsvp.Repository) *Controller {
+func NewController(repository *repository, eventRepository event.Repository, rsvpRepository rsvp.Repository, notifications *notifications.Service) *Controller {
 	return &Controller{
 		repository:      repository,
 		eventRepository: eventRepository,
 		rsvpRepository:  rsvpRepository,
+		notifications:   notifications,
 	}
 }

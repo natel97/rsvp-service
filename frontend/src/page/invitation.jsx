@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ActionButton, EventCard, PageHeader } from "../components";
 import { useParams, useNavigate } from "react-router-dom";
 import { storeInvitation } from "../utils/storeIDs";
+import { NotifyButton } from "../components/notify";
 
 const downloadEvent = (id) => {
   fetch(`${import.meta.env.VITE_API_URL}/invitation/${id}/download`).then(
@@ -56,6 +57,27 @@ const Invitation = () => {
         <PageHeader>You Are Invited</PageHeader>
         <EventCard {...invitation} />
       </div>
+      {invitation.subscribed && (
+        <ActionButton
+          onClick={() =>
+            fetch(
+              `${import.meta.env.VITE_API_URL}/invitation/${
+                params.id
+              }/subscribe`,
+              { method: "DELETE" }
+            )
+          }
+        >
+          Stop Notifications
+        </ActionButton>
+      )}
+      {!invitation.subscribed && (
+        <NotifyButton
+          url={`${import.meta.env.VITE_API_URL}/invitation/${
+            params.id
+          }/subscribe`}
+        />
+      )}
       <ActionButton onClick={() => downloadEvent(params.id)}>
         Add to Calendar
       </ActionButton>

@@ -9,6 +9,7 @@ import (
 	"rsvp/group"
 	"rsvp/invitation"
 	"rsvp/invitation/types"
+	"rsvp/notifications"
 	"rsvp/person"
 	persongroup "rsvp/person_group"
 	"rsvp/rsvp"
@@ -48,13 +49,34 @@ func createTestData(personRepository person.Repository, eventRepository event.Re
 	fmt.Println(invitation)
 }
 
+func getConfig() (map[string]string, error) {
+	config := viper.New()
+	config.SetConfigName(".env.local")
+	config.SetConfigType("env")
+	config.AddConfigPath(".")
+
+	c := map[string]string{}
+
+	err := config.ReadInConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	err = config.Unmarshal(&c)
+	if err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
+
 func main() {
 	db, err := gorm.Open(sqlite.Open("data.db"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
 
-	db.AutoMigrate(&event.Event{}, &types.Invitation{}, &person.Person{}, &rsvp.RSVP{}, &group.Group{}, &persongroup.PersonGroup{})
+	db.AutoMigrate(&event.Event{}, &types.Invitation{}, &person.Person{}, &rsvp.RSVP{}, &group.Group{}, &persongroup.PersonGroup{}, &notifications.Subscription{}, &notifications.InvitationSubscription{})
 
 	eventRepository := event.NewRepository(db)
 	rsvpRepository := rsvp.NewRepository(db)
@@ -63,8 +85,17 @@ func main() {
 	groupRepository := group.NewRepository(db)
 	pgRepository := persongroup.NewRepository(db)
 
-	invitationController := invitation.NewController(invitationRepository, eventRepository, rsvpRepository)
-	eventController := event.NewController(eventRepository, invitationRepository, personRepository)
+	notificationRepo := notifications.NewRepository(db)
+
+	c, err := getConfig()
+	if err != nil {
+		fmt.Println(err)
+		panic("config error" + err.Error())
+	}
+
+	notifyService := notifications.NewService(c["vapid_private_key"], c["vapid_public_key"], notificationRepo)
+	invitationController := invitation.NewController(invitationRepository, eventRepository, rsvpRepository, notifyService)
+	eventController := event.NewController(eventRepository, invitationRepository, personRepository, notifyService)
 	personController := person.NewController(personRepository)
 	groupController := group.NewController(groupRepository, pgRepository)
 
@@ -82,28 +113,11 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
-	config := viper.New()
-	config.SetConfigName(".env.local")
-	config.SetConfigType("env")
-	config.AddConfigPath(".")
-
-	c := map[string]string{}
-
-	err = config.ReadInConfig()
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	err = config.Unmarshal(&c)
-	if err != nil {
-		fmt.Println(err)
-	}
 
 	adminRoutes := server.Group("admin")
 	adminRoutes.Use(cors.Default())
 
 	adminRoutes.Use(func(ctx *gin.Context) {
-		fmt.Println(ctx.Request.URL)
 		auth := ctx.Request.Header.Get("Authorization")
 		if auth != c["api_key"] {
 			ctx.AbortWithStatus(http.StatusForbidden)
@@ -111,11 +125,14 @@ func main() {
 		}
 	})
 
+	notifyCtrl := notifications.NewController(notifyService, notificationRepo)
+
 	invitationController.HandleRoutes(server.Group("invitation"))
 	invitationController.HandleAdminRoutes(adminRoutes.Group("invitation"))
 	eventController.HandleRoutes(adminRoutes.Group("event"))
 	personController.HandleRoutes(adminRoutes.Group("people"))
 	groupController.HandleRoutes(adminRoutes.Group("group"))
+	notifyCtrl.HandleRoutes(adminRoutes.Group("notify"))
 
 	fmt.Println("Starting, http://localhost:9083")
 	server.Run(fmt.Sprintf(":%d", 9083))
