@@ -112,10 +112,15 @@ func (repo *Repository) SubscribeToInvitation(invitationID string, subscription 
 	}
 }
 
-func (repo *Repository) GetByEvent(eventID string) ([]Subscription, error) {
-	subscriptions := []Subscription{}
+type SubscriptionWithInvitation struct {
+	Subscription,
+	InvitationID string
+}
+
+func (repo *Repository) GetByEvent(eventID string) ([]SubscriptionWithInvitation, error) {
+	subscriptions := []SubscriptionWithInvitation{}
 	err := repo.db.Raw(`
-	SELECT s.*
+	SELECT s.*, inv_sub.invitation_id as invitation_id
 	FROM subscriptions s
 	LEFT JOIN (
 		SELECT *

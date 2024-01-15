@@ -41,7 +41,7 @@ func (ctrl *Controller) subscribe(ctx *gin.Context) {
 		return
 	}
 
-	ctrl.service.Notify(subscription.Subscription, "push-notify", "Push Notifications Set Up")
+	ctrl.service.Notify(subscription.Subscription, "push-notify", "Push Notifications Set Up", "/admin")
 
 	ctx.JSON(http.StatusOK, "OK")
 }

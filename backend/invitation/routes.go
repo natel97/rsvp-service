@@ -7,6 +7,7 @@ import (
 	"rsvp/event"
 	"rsvp/invitation/types"
 	"rsvp/notifications"
+	"rsvp/person"
 	"rsvp/rsvp"
 	"time"
 
@@ -16,10 +17,11 @@ import (
 )
 
 type Controller struct {
-	repository      *repository
-	eventRepository event.Repository
-	rsvpRepository  rsvp.Repository
-	notifications   *notifications.Service
+	repository       *repository
+	eventRepository  event.Repository
+	rsvpRepository   rsvp.Repository
+	notifications    *notifications.Service
+	personRepository person.Repository
 }
 
 func (ctrl *Controller) get(ctx *gin.Context) {
@@ -191,7 +193,12 @@ func (ctrl *Controller) post(ctx *gin.Context) {
 		return
 	}
 
-	ctrl.notifications.NotifyGroup("admin", "push-notify", "RSVP: Going"+body.Going+"Friend: "+body.BringingFriend)
+	go func() {
+		person, _ := ctrl.personRepository.Get(invitation.PersonID)
+		e, _ := ctrl.eventRepository.Get(invitation.EventID)
+		message := fmt.Sprintf("%s %s just RSVP'd to %s. Going %s, Friend %s", person.First, person.Last, e.Title, body.Going, body.BringingFriend)
+		ctrl.notifications.NotifyGroup("admin", "push-notify", message, fmt.Sprintf("/admin/event/%s/invite", invitation.EventID))
+	}()
 
 	ctx.JSON(http.StatusCreated, "Success")
 }
@@ -279,8 +286,10 @@ func (ctrl *Controller) subscribe(ctx *gin.Context) {
 	}
 
 	ctrl.notifications.RegisterForInvitation(id, rsi.Subscription, "invited")
-	ctrl.notifications.Notify(rsi.Subscription, "push-notify", "Subscription Successful!")
-	ctrl.notifications.NotifyGroup("admin", "push-notify", "New Subscriber: "+id)
+	go func() {
+		ctrl.notifications.Notify(rsi.Subscription, "push-notify", "Subscription Successful!", "/invitation/"+id)
+		ctrl.notifications.NotifyGroup("admin", "push-notify", "New Subscriber to push!", "/admin")
+	}()
 }
 
 func (ctrl *Controller) HandleRoutes(group *gin.RouterGroup) {
@@ -297,11 +306,12 @@ func (ctrl *Controller) HandleAdminRoutes(group *gin.RouterGroup) {
 	group.POST("group", ctrl.inviteGroup)
 }
 
-func NewController(repository *repository, eventRepository event.Repository, rsvpRepository rsvp.Repository, notifications *notifications.Service) *Controller {
+func NewController(repository *repository, eventRepository event.Repository, rsvpRepository rsvp.Repository, notifications *notifications.Service, personRepository person.Repository) *Controller {
 	return &Controller{
-		repository:      repository,
-		eventRepository: eventRepository,
-		rsvpRepository:  rsvpRepository,
-		notifications:   notifications,
+		repository:       repository,
+		eventRepository:  eventRepository,
+		rsvpRepository:   rsvpRepository,
+		notifications:    notifications,
+		personRepository: personRepository,
 	}
 }

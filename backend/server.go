@@ -94,7 +94,7 @@ func main() {
 	}
 
 	notifyService := notifications.NewService(c["vapid_private_key"], c["vapid_public_key"], notificationRepo)
-	invitationController := invitation.NewController(invitationRepository, eventRepository, rsvpRepository, notifyService)
+	invitationController := invitation.NewController(invitationRepository, eventRepository, rsvpRepository, notifyService, personRepository)
 	eventController := event.NewController(eventRepository, invitationRepository, personRepository, notifyService)
 	personController := person.NewController(personRepository)
 	groupController := group.NewController(groupRepository, pgRepository)

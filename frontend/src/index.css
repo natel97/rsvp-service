@@ -26,6 +26,9 @@
 
 #root {
   background-color: #222;
+  @media (prefers-color-scheme: light) {
+    background-color: white;
+  }
 }
 
 body {

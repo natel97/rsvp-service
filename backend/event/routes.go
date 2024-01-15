@@ -8,6 +8,7 @@ import (
 	"rsvp/person"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 )
 
 type Controller struct {
@@ -44,13 +45,15 @@ func (ctrl *Controller) post(ctx *gin.Context) {
 
 	err := ctx.ShouldBindJSON(&event)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, err)
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		fmt.Println(err)
 		return
 	}
 
 	vals, err := ctrl.repository.Create(event)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, err)
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		fmt.Println(err)
 		return
 	}
 
@@ -59,27 +62,62 @@ func (ctrl *Controller) post(ctx *gin.Context) {
 
 func (ctrl *Controller) update(ctx *gin.Context) {
 	id, _ := ctx.Params.Get("id")
+
+	existingEvent, err := ctrl.repository.Get(id)
+	if err != nil {
+		ctx.AbortWithError(http.StatusNotFound, err)
+		fmt.Println(err)
+		return
+	}
+
 	event := Event{}
 
-	err := ctx.ShouldBindJSON(&event)
+	err = ctx.ShouldBindBodyWith(&event, binding.JSON)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
+		fmt.Println(err)
+		return
+	}
+
+	rawMap := map[string]interface{}{}
+
+	err = ctx.ShouldBindBodyWith(&rawMap, binding.JSON)
+	if err != nil {
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		fmt.Println(err)
 		return
 	}
 
 	vals, err := ctrl.repository.Update(id, event)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, err)
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		fmt.Println(err)
 		return
 	}
 
-	ctrl.notifify.NotifyEvent(id, "push-notify", "Event Update!")
+	updatedItems := ""
+
+	max := len(rawMap) - 1
+	for k, i := range rawMap {
+		fmt.Println(k, i, max)
+		updatedItems = fmt.Sprintf("%s, %s: %s", updatedItems, k, i)
+	}
+
+	message := fmt.Sprintf("Event %s updated%s", existingEvent.Title, updatedItems)
+
+	go ctrl.notifify.NotifyEvent(id, "push-notify", message, "/")
 
 	ctx.JSON(http.StatusOK, vals)
 }
 
 func (ctrl *Controller) delete(ctx *gin.Context) {
 	id, _ := ctx.Params.Get("id")
+
+	existing, err := ctrl.repository.Get("id")
+	if err != nil {
+		ctx.AbortWithError(http.StatusNotFound, err)
+	}
+
 	vals, err := ctrl.repository.Delete(id)
 
 	if err != nil {
@@ -87,7 +125,7 @@ func (ctrl *Controller) delete(ctx *gin.Context) {
 		return
 	}
 
-	ctrl.notifify.NotifyEvent(id, "push-notify", "An event has been deleted :(")
+	ctrl.notifify.NotifyEvent(id, "push-notify", fmt.Sprintf("Event %s has been deleted", existing.Title), "/")
 
 	ctx.JSON(http.StatusOK, vals)
 }

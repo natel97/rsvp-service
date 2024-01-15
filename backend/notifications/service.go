@@ -24,6 +24,7 @@ type Service struct {
 type PushBody struct {
 	Kind string `json:"kind"`
 	Body string `json:"body"`
+	URL  string `json:"url"`
 }
 
 func (service *Service) GetIsSubscribed(id string) bool {
@@ -37,12 +38,12 @@ func (service *Service) RemoveByInvitation(id string) error {
 	return err
 }
 
-func (service *Service) NotifyGroup(subscriptionKind string, kind string, body string) {
+func (service *Service) NotifyGroup(subscriptionKind string, kind string, body string, url string) {
 	fmt.Println("Notifying group", subscriptionKind)
 	val, _ := service.repository.GetByKind(subscriptionKind)
 
 	for _, sub := range val {
-		go service.Notify(sub.Subscription, kind, body)
+		go service.Notify(sub.Subscription, kind, body, url)
 	}
 }
 
@@ -51,7 +52,7 @@ func (service *Service) RegisterForInvitation(invitationID, subscription, kind s
 	service.repository.SubscribeToInvitation(invitationID, subscription)
 }
 
-func (service *Service) NotifyEvent(eventID string, kind string, body string) {
+func (service *Service) NotifyEvent(eventID string, kind string, body string, url string) {
 	fmt.Println("Notifying event people: ", eventID)
 	val, err := service.repository.GetByEvent(eventID)
 
@@ -60,18 +61,19 @@ func (service *Service) NotifyEvent(eventID string, kind string, body string) {
 	}
 
 	for _, sub := range val {
-		go service.Notify(sub.Subscription, kind, body)
+		go service.Notify(sub.Subscription, kind, body, "/invitation/"+sub.InvitationID)
 	}
 }
 
-func (service *Service) Notify(subscription string, kind string, body string) {
-	fmt.Println("Sending Notification ", kind, "body", body)
+func (service *Service) Notify(subscription string, kind string, body string, url string) {
+	fmt.Println("Sending Notification ", kind, "body", body, " url: ", url)
 	s := &webpush.Subscription{}
 	json.Unmarshal([]byte(subscription), s)
 
 	pushBody := PushBody{
 		Kind: kind,
 		Body: body,
+		URL:  url,
 	}
 
 	payload, err := json.Marshal(pushBody)
@@ -83,7 +85,6 @@ func (service *Service) Notify(subscription string, kind string, body string) {
 	resp, err := webpush.SendNotification(payload, s, &webpush.Options{
 		VAPIDPublicKey:  service.publicVapidKey,
 		VAPIDPrivateKey: service.privateVapidKey,
-		Subscriber:      "example@example.com",
 		TTL:             30,
 	})
 

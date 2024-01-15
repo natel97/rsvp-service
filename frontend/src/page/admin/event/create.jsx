@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ActionButton, PageHeader, TextInput } from "../../../components";
 import { getAuthToken } from "../auth";
 import { useNavigate } from "react-router-dom";
@@ -20,9 +20,6 @@ const CreateEvent = () => {
   const [Street, setStreet] = useState("");
   const [Title, setTitle] = useState("");
   const navigate = useNavigate();
-  useEffect(() => {
-    console.log({ date });
-  }, [date]);
 
   return (
     <div

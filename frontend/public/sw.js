@@ -4,8 +4,7 @@
 /**@type {ServiceWorkerGlobalScope} sw */
 const sw = self;
 
-sw.addEventListener("install", (e) => {
-  console.log("Install", { e });
+sw.addEventListener("install", () => {
   self.skipWaiting();
 });
 
@@ -16,26 +15,54 @@ sw.addEventListener("activate", async (event) => {
 self.addEventListener("push", (e) => {
   const body = e.data.json();
   if (body.kind === "push-notify") {
-    self.registration.showNotification("Update", { body: body.body });
+    self.registration.showNotification("Update", {
+      body: body.body,
+      icon: "/icon.svg",
+      data: body.url,
+      vibrate: [200, 100, 200, 100, 200, 100, 200],
+    });
   }
 });
 
 sw.addEventListener("notificationclick", function (event) {
-  let url = `/`;
-  event.notification.close(); // Android needs explicit close.
+  let url = event.notification.data;
+  event.notification.close();
+
   event.waitUntil(
     clients.matchAll({ type: "window" }).then((windowClients) => {
-      // Check if there is already a window/tab open with the target URL
-      for (var i = 0; i < windowClients.length; i++) {
-        var client = windowClients[i];
-        // If so, just focus it.
-        if (client.url === url && "focus" in client) {
-          return client.focus();
+      if (windowClients && windowClients.length) {
+        for (var i = 0; i < windowClients.length; i++) {
+          var client = windowClients[i];
+          if (client.url.includes(url) && "focus" in client) {
+            const focus = client.focus();
+            client.postMessage({
+              type: "OPEN_MODAL",
+              data: {
+                title: event.notification.title,
+                body: event.notification.body,
+              },
+            });
+            return focus;
+          }
         }
       }
-      // If not, then open the target URL in a new window/tab.
       if (clients.openWindow) {
-        return clients.openWindow(url);
+        const newWindow = clients.openWindow(url);
+
+        newWindow.then((window) => {
+          // IK it's bad, promise isn't actually when window is ready :(
+          setTimeout(() => {
+            window.postMessage({
+              type: "OPEN_MODAL",
+              data: {
+                title: event.notification.title,
+                body: event.notification.body,
+              },
+            });
+          }, 1500);
+        });
+
+        return newWindow;
       }
     })
   );

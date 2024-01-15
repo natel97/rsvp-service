@@ -14,10 +14,12 @@ import AdminGroups from "./page/admin/group";
 import ManageGroupPeople from "./page/admin/group/people";
 import InvitePerson from "./page/admin/event/invite-person";
 import InviteGroup from "./page/admin/event/invite-group";
+import NotificationListener from "./components/modal";
 
 const App = () => {
   return (
     <BrowserRouter>
+      <NotificationListener />
       <Routes>
         <Route path="/invitation/:id" Component={Invitation} />
         <Route path="/invitation/:id/rsvp" Component={RSVP} />

@@ -72,6 +72,32 @@ export const PageHeader = styled.h1`
   }
 `;
 
+export const ModalBackground = styled.div`
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+export const ModalBody = styled.div`
+  background: #444;
+  padding: 32px;
+  border-radius: 8px;
+  max-height: 80vh;
+  overflow: auto;
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+  @media (prefers-color-scheme: light) {
+    background: ${colors.secondary.light};
+  }
+`;
+
 export const ActionButton = styled.button`
   font-size: 1.5rem;
   background: ${colors.success.dark};
