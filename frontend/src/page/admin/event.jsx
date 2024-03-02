@@ -24,6 +24,7 @@ const AdminEvent = () => {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
+        overflow: "auto",
       }}
     >
       <PageHeader>Manage Events</PageHeader>

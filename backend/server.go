@@ -13,13 +13,17 @@ import (
 	"rsvp/person"
 	persongroup "rsvp/person_group"
 	"rsvp/rsvp"
+	timeoption "rsvp/time_option"
+	timeselection "rsvp/time_selection"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron"
 	"github.com/spf13/viper"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func createTestData(personRepository person.Repository, eventRepository event.Repository, invitationRepository types.Repository, run bool) {
@@ -70,13 +74,30 @@ func getConfig() (map[string]string, error) {
 	return c, nil
 }
 
+func getGormConfig(isProd bool) *gorm.Config {
+	config := gorm.Config{}
+	if !isProd {
+		config.Logger = logger.Default.LogMode(logger.Info)
+	}
+	return &config
+}
+
 func main() {
-	db, err := gorm.Open(sqlite.Open("data.db"), &gorm.Config{})
+	c, err := getConfig()
+	if err != nil {
+		fmt.Println(err)
+		panic("config error" + err.Error())
+	}
+
+	db, err := gorm.Open(sqlite.Open("data.db"), getGormConfig(c["environment"] == "production"))
+
 	if err != nil {
 		panic("failed to connect database")
 	}
 
-	db.AutoMigrate(&event.Event{}, &types.Invitation{}, &person.Person{}, &rsvp.RSVP{}, &group.Group{}, &persongroup.PersonGroup{}, &notifications.Subscription{}, &notifications.InvitationSubscription{})
+	cronjobs := cron.New()
+
+	db.AutoMigrate(&event.Event{}, &types.Invitation{}, &person.Person{}, &rsvp.RSVP{}, &group.Group{}, &persongroup.PersonGroup{}, &notifications.Subscription{}, &notifications.InvitationSubscription{}, &timeoption.TimeOption{}, &timeselection.TimeSelection{})
 
 	eventRepository := event.NewRepository(db)
 	rsvpRepository := rsvp.NewRepository(db)
@@ -87,17 +108,15 @@ func main() {
 
 	notificationRepo := notifications.NewRepository(db)
 
-	c, err := getConfig()
-	if err != nil {
-		fmt.Println(err)
-		panic("config error" + err.Error())
-	}
-
 	notifyService := notifications.NewService(c["vapid_private_key"], c["vapid_public_key"], notificationRepo)
-	invitationController := invitation.NewController(invitationRepository, eventRepository, rsvpRepository, notifyService, personRepository)
-	eventController := event.NewController(eventRepository, invitationRepository, personRepository, notifyService)
+	timeOptionRepository := timeoption.NewRepository(db)
+	timeSelectionRepository := timeselection.NewRepository(db)
+	invitationController := invitation.NewController(invitationRepository, eventRepository, rsvpRepository, notifyService, personRepository, timeOptionRepository, timeSelectionRepository)
+	eventController := event.NewController(eventRepository, invitationRepository, personRepository, notifyService, timeOptionRepository)
 	personController := person.NewController(personRepository)
 	groupController := group.NewController(groupRepository, pgRepository)
+
+	invitationController.AddCrons(cronjobs)
 
 	createTestData(personRepository, eventRepository, invitationRepository, false)
 
@@ -129,11 +148,13 @@ func main() {
 
 	invitationController.HandleRoutes(server.Group("invitation"))
 	invitationController.HandleAdminRoutes(adminRoutes.Group("invitation"))
-	eventController.HandleRoutes(adminRoutes.Group("event"))
+	eventController.HandleRoutes(server.Group("event"))
+	eventController.HandleAdminRoutes(adminRoutes.Group("event"))
 	personController.HandleRoutes(adminRoutes.Group("people"))
 	groupController.HandleRoutes(adminRoutes.Group("group"))
 	notifyCtrl.HandleRoutes(adminRoutes.Group("notify"))
 
+	go cronjobs.Run()
 	fmt.Println("Starting, http://localhost:9083")
 	server.Run(fmt.Sprintf(":%d", 9083))
 }

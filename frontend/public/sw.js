@@ -67,3 +67,14 @@ sw.addEventListener("notificationclick", function (event) {
     })
   );
 });
+
+// TODO: this
+// sw.addEventListener("pushsubscriptionchange", function (event) {
+//   event.waitUntil(
+//     fetch("", {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify(event.newSubscription),
+//     })
+//   );
+// });

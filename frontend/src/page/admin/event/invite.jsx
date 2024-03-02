@@ -3,6 +3,8 @@ import { ActionButton, EventCard, PageHeader } from "../../../components";
 import { PersonCard } from "../component";
 import { useEffect, useState } from "react";
 import { getAuthToken } from "../auth";
+import AddTime from "./AddTime";
+import ManageTimes from "./ManageTimes";
 
 const Invite = () => {
   const navigate = useNavigate();
@@ -39,6 +41,8 @@ const Invite = () => {
         ))}
       </div>
       <div>
+        <AddTime eventID={id} />
+        <ManageTimes {...attendance} />
         <ActionButton onClick={() => navigate("./person")}>
           Invite Person
         </ActionButton>

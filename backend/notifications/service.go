@@ -33,6 +33,16 @@ func (service *Service) GetIsSubscribed(id string) bool {
 	return inSub.ID != ""
 }
 
+func (service *Service) NotifyInvite(kind string, body string, invitationID string) {
+	val, err := service.repository.GetSubscriptionByInvitation(invitationID)
+	if err != nil {
+		fmt.Println("Error notifying invite: ", err)
+		return
+	}
+
+	service.Notify(val.Subscription, kind, body, "/invitation/"+invitationID)
+}
+
 func (service *Service) RemoveByInvitation(id string) error {
 	err := service.repository.DeleteByInvitation(id)
 	return err

@@ -76,7 +76,7 @@ export const NotifyButton = ({ url }) => {
     <ActionButton
       onClick={() => requestNotificationPermission().then(() => subscribe(url))}
     >
-      Enable Notifications
+      Enable Notifications 🔔
     </ActionButton>
   );
 };

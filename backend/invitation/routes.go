@@ -9,19 +9,94 @@ import (
 	"rsvp/notifications"
 	"rsvp/person"
 	"rsvp/rsvp"
+	timeoption "rsvp/time_option"
+	timeselection "rsvp/time_selection"
 	"time"
 
 	ical "github.com/arran4/golang-ical"
 	"github.com/gin-gonic/gin"
+	cron "github.com/robfig/cron"
 	"gorm.io/gorm"
 )
 
 type Controller struct {
-	repository       *repository
-	eventRepository  event.Repository
-	rsvpRepository   rsvp.Repository
-	notifications    *notifications.Service
-	personRepository person.Repository
+	repository              *repository
+	eventRepository         event.Repository
+	rsvpRepository          rsvp.Repository
+	notifications           *notifications.Service
+	personRepository        person.Repository
+	timeOptionRepository    timeoption.Repository
+	timeSelectionRepository timeselection.Repository
+}
+
+func getRSVPMessage(rsvp *rsvp.RSVP) string {
+	if rsvp == nil {
+		return "You have not RSVP'd yet 😥️"
+	}
+
+	messages := map[string]string{
+		"Yes":   "See you soon!",
+		"No":    "It's not too late to change your mind if you'd like to RSVP.",
+		"Maybe": "We hope we'll see you, but feel free to update your RSVP!",
+	}
+
+	return messages[rsvp.Going]
+}
+
+func (ctrl *Controller) notifyUpcomingEvent(hoursBefore uint, hourRange uint) func() {
+	return func() {
+		fmt.Println("Running cron: Notify Upcoming Event")
+		events, err := ctrl.eventRepository.GetEventsBetween(hoursBefore, hoursBefore+hourRange)
+		if err != nil {
+			fmt.Println("Error in notification", err)
+		}
+
+		for _, event := range events {
+			fmt.Println("Sending out notifications for event ", event.ID)
+			invitations, err := ctrl.repository.GetByEvent(event.ID)
+			if err != nil {
+				fmt.Println("Error getting invites for upcoming event", event.ID)
+				continue
+			}
+
+			for _, invite := range invitations {
+				rsvp, err := ctrl.rsvpRepository.GetLatestRSVPByInvitation(invite.ID)
+				if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+					fmt.Println("Error getting rsvp to notify before event: ", event.Title, invite.ID)
+					continue
+				}
+
+				rsvpMessage := getRSVPMessage(rsvp)
+				message := fmt.Sprintf("Upcoming event %s! %s", event.Title, rsvpMessage)
+				ctrl.notifications.NotifyInvite("push-notify", message, invite.ID)
+			}
+		}
+	}
+}
+
+func (ctrl *Controller) closeStaleEvents() {
+	events, err := ctrl.eventRepository.GetUnmarkedStaleEvents()
+	fmt.Println("Checking stale events")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	for _, e := range events {
+		e.SetEventState(event.STALE)
+		_, err := ctrl.eventRepository.Update(e.ID, e)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		fmt.Println("Updated stale event", e.ID)
+	}
+}
+
+func (ctrl *Controller) AddCrons(cron *cron.Cron) {
+	job := ctrl.notifyUpcomingEvent(5, 1)
+	cron.AddFunc("@hourly", job)
+	cron.AddFunc("@daily", ctrl.closeStaleEvents)
 }
 
 func (ctrl *Controller) get(ctx *gin.Context) {
@@ -39,7 +114,7 @@ func (ctrl *Controller) get(ctx *gin.Context) {
 		return
 	}
 
-	event, err := ctrl.eventRepository.Get(invitation.EventID)
+	ev, err := ctrl.eventRepository.Get(invitation.EventID)
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		ctx.JSON(http.StatusNotFound, nil)
@@ -53,7 +128,7 @@ func (ctrl *Controller) get(ctx *gin.Context) {
 	}
 
 	attendance := Attendance{}
-	responses, err := ctrl.rsvpRepository.GetEventRSVPs(event.ID)
+	responses, err := ctrl.rsvpRepository.GetEventRSVPs(ev.ID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		fmt.Println(err)
@@ -91,17 +166,31 @@ func (ctrl *Controller) get(ctx *gin.Context) {
 	}
 
 	subscribed := ctrl.notifications.GetIsSubscribed(id)
+	timeOptions, err := ctrl.eventRepository.GetTimeOptionData(ev.ID, invitation.ID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
+		fmt.Println(err)
+		return
+	}
+
+	inviteState := ev.GetEventState()
+	var date *time.Time
+	if inviteState != event.PLANNING {
+		date = ev.Date
+	}
 
 	response := GetInvitationResponse{
-		Title:        event.Title,
-		Date:         event.Date,
-		Street:       event.Street,
-		City:         event.City,
-		Attendance:   attendance,
-		MyAttendance: me.Going,
-		MyFriend:     me.BringingFriend,
-		Description:  event.Description,
-		Subscribed:   subscribed,
+		Title:           ev.Title,
+		Date:            date,
+		Street:          ev.Street,
+		City:            ev.City,
+		Attendance:      attendance,
+		InvitationState: inviteState,
+		MyAttendance:    me.Going,
+		MyFriend:        me.BringingFriend,
+		Description:     ev.Description,
+		Subscribed:      subscribed,
+		TimeOptions:     timeOptions,
 	}
 
 	ctx.JSON(http.StatusOK, response)
@@ -275,6 +364,25 @@ func (ctrl *Controller) unsubscribe(ctx *gin.Context) {
 	ctx.JSON(http.StatusAccepted, "deleted")
 }
 
+func (ctrl *Controller) selectTime(ctx *gin.Context) {
+	invitationID := ctx.Param("id")
+	timeOptionID := ctx.Param("time-id")
+	body := timeselection.TimeSelection{}
+	ctx.BindJSON(&body)
+	body.TimeOptionID = timeOptionID
+	body.InvitationID = invitationID
+
+	err := ctrl.timeSelectionRepository.UpdateSelection(&body)
+
+	if err != nil {
+		fmt.Println(err, "error making time selection")
+		ctx.JSON(http.StatusBadRequest, "db error")
+		return
+	}
+
+	ctx.JSON(http.StatusAccepted, body)
+}
+
 func (ctrl *Controller) subscribe(ctx *gin.Context) {
 	id, _ := ctx.Params.Get("id")
 	rsi := ReservationSubscriptionInput{}
@@ -298,6 +406,7 @@ func (ctrl *Controller) HandleRoutes(group *gin.RouterGroup) {
 	group.GET("/:id/download", ctrl.getCalendarFile)
 	group.POST("/:id/subscribe", ctrl.subscribe)
 	group.DELETE("/:id/subscribe", ctrl.unsubscribe)
+	group.PUT("/:id/time-selection/:time-id", ctrl.selectTime)
 }
 
 func (ctrl *Controller) HandleAdminRoutes(group *gin.RouterGroup) {
@@ -306,12 +415,14 @@ func (ctrl *Controller) HandleAdminRoutes(group *gin.RouterGroup) {
 	group.POST("group", ctrl.inviteGroup)
 }
 
-func NewController(repository *repository, eventRepository event.Repository, rsvpRepository rsvp.Repository, notifications *notifications.Service, personRepository person.Repository) *Controller {
+func NewController(repository *repository, eventRepository event.Repository, rsvpRepository rsvp.Repository, notifications *notifications.Service, personRepository person.Repository, timeOptionRepository timeoption.Repository, timeSelectionRepository timeselection.Repository) *Controller {
 	return &Controller{
-		repository:       repository,
-		eventRepository:  eventRepository,
-		rsvpRepository:   rsvpRepository,
-		notifications:    notifications,
-		personRepository: personRepository,
+		repository:              repository,
+		eventRepository:         eventRepository,
+		rsvpRepository:          rsvpRepository,
+		notifications:           notifications,
+		personRepository:        personRepository,
+		timeOptionRepository:    timeOptionRepository,
+		timeSelectionRepository: timeSelectionRepository,
 	}
 }

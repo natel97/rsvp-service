@@ -145,3 +145,20 @@ func (repo *Repository) GetByEvent(eventID string) ([]SubscriptionWithInvitation
 
 	return subscriptions, nil
 }
+
+func (repo *Repository) GetSubscriptionByInvitation(inviteID string) (*Subscription, error) {
+	sub := Subscription{}
+	inviteSub := InvitationSubscription{}
+	err := repo.db.First(&inviteSub, "invitation_id = ?", inviteID).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = repo.db.First(&sub, "id = ?", inviteSub.SubscriptionID).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &sub, nil
+}

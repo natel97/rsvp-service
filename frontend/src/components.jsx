@@ -1,5 +1,6 @@
 import { styled } from "styled-components";
 import moment from "moment";
+import { useState } from "react";
 
 const colors = {
   success: {
@@ -14,6 +15,16 @@ const colors = {
     light: "#BDF",
     dark: "#046",
   },
+  background: {
+    light: "#DDD",
+    dark: "#222",
+  },
+};
+
+const sizes = {
+  sm: "18px",
+  md: "22px",
+  lg: "28px",
 };
 
 const TextInputContainer = styled.div`
@@ -27,6 +38,48 @@ export const TextInput = (params) => {
     </TextInputContainer>
   );
 };
+
+export const Modal = ({ open = false, setIsOpen = () => null, children }) => {
+  if (!open) return null;
+
+  return (
+    <ModalBack onClick={() => setIsOpen(false)}>
+      <ModalInner onClick={(e) => e.stopPropagation()}>{children}</ModalInner>
+    </ModalBack>
+  );
+};
+
+export const Text = styled.span`
+  padding: 0;
+  margin: 0;
+  color: white;
+  @media (prefers-color-scheme: light) {
+    color: black;
+  }
+  font-size: ${(params) => sizes[params.size || "sm"]};
+`;
+
+const ModalBack = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: #000a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ModalInner = styled.div`
+  background: ${colors.background.dark};
+  @media (prefers-color-scheme: light) {
+    background: ${colors.background.light};
+  }
+  margin: 16px;
+  max-height: 75vh;
+  overflow: auto;
+`;
 
 const commonTextStyles = `
   border: 1px solid #ccc;
@@ -88,11 +141,11 @@ export const ModalBody = styled.div`
   background: #444;
   padding: 32px;
   border-radius: 8px;
-  max-height: 80vh;
   overflow: auto;
   display: flex;
   justify-content: space-between;
   flex-direction: column;
+
   @media (prefers-color-scheme: light) {
     background: ${colors.secondary.light};
   }
@@ -127,6 +180,7 @@ export const Option = ({
   prefix,
   options = [],
   current = "",
+  fullWidth = false,
   setCurrent = () => {},
 }) => {
   return (
@@ -135,6 +189,7 @@ export const Option = ({
         display: "flex",
         justifyContent: "space-between",
         margin: "16px",
+        ...(fullWidth && { width: "100%" }),
       }}
     >
       {options.map((option) => (
@@ -202,23 +257,87 @@ export const EventCard = ({
 }) => {
   const day = moment(date).format(DAY_FORMAT);
   const time = moment(date).format(TIME_FORMAT);
+  const address = encodeURIComponent(street + " " + city);
 
   return (
     <Card onClick={onClick}>
       <h2 style={{ fontSize: "2rem", textAlign: "center" }}>{title}</h2>
 
-      <EmojiDetail size="2rem" emoji="📅">
-        <h3>{day}</h3>
-        <h3>{time}</h3>
-      </EmojiDetail>
+      {date && (
+        <EmojiDetail size="2rem" emoji="📅">
+          <h3>{day}</h3>
+          <h3>{time}</h3>
+        </EmojiDetail>
+      )}
 
-      <EmojiDetail size="2rem" emoji="📍">
-        <h3>{street}</h3>
-        <h3>{city}</h3>
-      </EmojiDetail>
+      <a
+        href={`https://maps.google.com/?q=${address}`}
+        target="_blank"
+        rel="noreferrer"
+        style={{ color: "inherit", textDecoration: "none" }}
+      >
+        <EmojiDetail size="2rem" emoji="📍">
+          <h3>{street}</h3>
+          <h3>{city}</h3>
+        </EmojiDetail>
+      </a>
 
       <div>{description}</div>
-      {attendance && <Attendance {...attendance} />}
+      {attendance && date && <Attendance {...attendance} />}
+    </Card>
+  );
+};
+
+const OptionStyle = styled.div`
+  border-radius: 16px;
+  padding: 8px;
+  margin: 8px;
+`;
+
+const SelectionContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+`;
+
+export const TimeOption = ({ option, onSelect }) => {
+  const day =
+    moment(option.time).format(DAY_FORMAT) +
+    " " +
+    moment(option.time).format(TIME_FORMAT);
+  const [upvote, setUpvote] = useState(option.isUpvote);
+  const [downvote, setDownvote] = useState(option.isDownvote);
+
+  const currentSet = upvote ? "Likely" : downvote ? "Unlikely" : "idk";
+  const setCurrent = (val) => {
+    const map = {
+      Likely: true,
+      idk: null,
+      Unlikely: false,
+    };
+
+    onSelect(map[val]);
+    setUpvote(val === "Likely");
+    setDownvote(val === "Unlikely");
+  };
+
+  return (
+    <Card>
+      <OptionStyle>
+        <Text size="md">{day}</Text>
+        <SelectionContainer>
+          <SelectionContainer>
+            <Option
+              fullWidth
+              prefix={option.id}
+              options={["Likely", "idk", "Unlikely"]}
+              current={currentSet}
+              setCurrent={setCurrent}
+            />
+          </SelectionContainer>
+        </SelectionContainer>
+      </OptionStyle>
     </Card>
   );
 };

@@ -2,9 +2,8 @@ import { useState } from "react";
 import { ActionButton, PageHeader, TextInput } from "../../../components";
 import { getAuthToken } from "../auth";
 import { useNavigate } from "react-router-dom";
-import moment from "moment";
 
-const getDefaultDateTime = () => {
+export const getDefaultDateTime = () => {
   const fullDate = new Date().toISOString();
   const date = fullDate.split("T")[0];
 
@@ -14,7 +13,6 @@ const getDefaultDateTime = () => {
 const CreateEvent = () => {
   const apiKey = getAuthToken();
   const [City, setCity] = useState("");
-  const [date, setDate] = useState(getDefaultDateTime());
   const [Description, setDescription] = useState("");
   const [InternalNote, setInternalNote] = useState("");
   const [Street, setStreet] = useState("");
@@ -52,13 +50,6 @@ const CreateEvent = () => {
           onChange={(e) => setCity(e.target.value)}
         />
         <TextInput
-          type="datetime-local"
-          placeholder="Date"
-          value={date}
-          min={new Date()}
-          onChange={(e) => setDate(e.target.value)}
-        />
-        <TextInput
           placeholder="Public Description"
           value={Description}
           area
@@ -78,7 +69,6 @@ const CreateEvent = () => {
             method: "POST",
             body: JSON.stringify({
               City,
-              Date: moment(date).toDate(),
               Description,
               InternalNote,
               Street,
