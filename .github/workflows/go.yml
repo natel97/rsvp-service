@@ -3,6 +3,11 @@
 
 name: Go
 
+defaults:
+  run:
+    shell: bash
+    working-directory: ./backend
+
 on:
   push:
     branches: [ "main" ]
