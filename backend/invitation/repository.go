@@ -29,10 +29,6 @@ func (repo *repository) Create(e Invitation) (*Invitation, error) {
 	return &e, nil
 }
 
-type InviteGroup struct {
-	GroupID string
-	EventID string
-}
 type UserID string
 
 func (repo *repository) InviteGroup(e InviteGroup) error {

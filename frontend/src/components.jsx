@@ -270,17 +270,21 @@ export const EventCard = ({
         </EmojiDetail>
       )}
 
-      <a
-        href={`https://maps.google.com/?q=${address}`}
-        target="_blank"
-        rel="noreferrer"
-        style={{ color: "inherit", textDecoration: "none" }}
-      >
-        <EmojiDetail size="2rem" emoji="📍">
+      <EmojiDetail size="2rem" emoji="📍">
+        <a
+          href={`https://maps.google.com/?q=${address}`}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            color: "inherit",
+            textDecoration: "none",
+            alignSelf: "flex-start",
+          }}
+        >
           <h3>{street}</h3>
           <h3>{city}</h3>
-        </EmojiDetail>
-      </a>
+        </a>
+      </EmojiDetail>
 
       <div>{description}</div>
       {attendance && date && <Attendance {...attendance} />}

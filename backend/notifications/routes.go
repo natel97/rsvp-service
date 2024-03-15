@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewController(service *Service, repo *Repository) *Controller {
+func NewController(service Service, repo *repository) *Controller {
 	return &Controller{
 		service: service,
 		repo:    repo,
@@ -15,8 +15,8 @@ func NewController(service *Service, repo *Repository) *Controller {
 }
 
 type Controller struct {
-	service *Service
-	repo    *Repository
+	service Service
+	repo    *repository
 }
 
 type SubscriptionInput struct {

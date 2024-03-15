@@ -15,6 +15,7 @@ func NewRepository(db *gorm.DB) *repository {
 	}
 }
 
+//go:generate mockgen -source=repository.go -destination=repository_mock.go -package=timeoption
 type Repository interface {
 	CreateTimeOption(to *TimeOption) error
 	DeleteTimeOption(id string) error

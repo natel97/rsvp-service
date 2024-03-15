@@ -1,6 +1,8 @@
 # RSVP Service
 
-This is a side project made to manage invitations to events. I am using this for inviting people to Jackbox game nights. But feel free to use this for personal use. This is very MVP, and I mostly made it so there are more coding samples of mine available on the internet.
+I know there are existing services online, but figured it could be fun to start another one to add some code to my GitHub haha
+
+This is a side project made to manage invitations to events. I am using this for inviting people to Jackbox game nights. But feel free to use this for personal use. This is very MVP.
 
 ## Deployments
 

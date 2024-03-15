@@ -108,8 +108,8 @@ const Invitation = () => {
       </div>
       {invitation.invitationState === "PLANNING" && (
         <Text size="md">
-          Select days you can attend. Later, a time will be selected. Check back
-          later or enable notifications to get an update.
+          Select days you are available, then enable notifications to get
+          notified when a day is decided.
         </Text>
       )}
       {invitation.subscribed && (

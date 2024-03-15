@@ -97,7 +97,6 @@ func (repo *repository) Update(id string, details RSVP) (*RSVP, error) {
 	}
 
 	err = repo.db.Where("id = ?", id).Updates(&details).Error
-
 	if err != nil {
 		return nil, err
 	}

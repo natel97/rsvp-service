@@ -15,6 +15,7 @@ func NewRepository(db *gorm.DB) *repository {
 	}
 }
 
+//go:generate mockgen -source=repository.go -destination=repository_mock.go -package=person
 type Repository interface {
 	Create(e Person) (*Person, error)
 	Get(id string) (*Person, error)

@@ -16,7 +16,7 @@ type Controller struct {
 	repository           *repository
 	invitationRepository types.Repository
 	personRepository     person.Repository
-	notifify             *notifications.Service
+	notifify             notifications.Service
 	timeOptionRepository timeoption.Repository
 }
 
@@ -252,7 +252,7 @@ func (ctrl *Controller) HandleAdminRoutes(group *gin.RouterGroup) {
 	group.DELETE("/time-option/:id", ctrl.deleteTimeOption)
 }
 
-func NewController(repository *repository, invitationRepository types.Repository, personRepository person.Repository, notify *notifications.Service, timeOptionRepository timeoption.Repository) *Controller {
+func NewController(repository *repository, invitationRepository types.Repository, personRepository person.Repository, notify notifications.Service, timeOptionRepository timeoption.Repository) *Controller {
 	return &Controller{
 		repository:           repository,
 		invitationRepository: invitationRepository,

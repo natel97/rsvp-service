@@ -21,17 +21,28 @@ type InvitationSubscription struct {
 	InvitationID   string
 }
 
-type Repository struct {
+type Repository interface {
+	GetByInvitation(id string) InvitationSubscription
+	DeleteByInvitation(invitationID string) error
+	Create(subscription string, kind string) error
+	GetAll() ([]Subscription, error)
+	GetByKind(kind string) ([]Subscription, error)
+	SubscribeToInvitation(invitationID string, subscription string)
+	GetByEvent(eventID string) ([]SubscriptionWithInvitation, error)
+	GetSubscriptionByInvitation(inviteID string) (*Subscription, error)
+}
+
+type repository struct {
 	db *gorm.DB
 }
 
-func NewRepository(db *gorm.DB) *Repository {
-	return &Repository{
+func NewRepository(db *gorm.DB) *repository {
+	return &repository{
 		db: db,
 	}
 }
 
-func (repo *Repository) GetByInvitation(id string) InvitationSubscription {
+func (repo *repository) GetByInvitation(id string) InvitationSubscription {
 	inSub := InvitationSubscription{}
 
 	err := repo.db.Find(&inSub, "invitation_id = ? AND deleted_at IS NULL", id).Error
@@ -41,7 +52,7 @@ func (repo *Repository) GetByInvitation(id string) InvitationSubscription {
 
 	return inSub
 }
-func (repo *Repository) DeleteByInvitation(invitationID string) error {
+func (repo *repository) DeleteByInvitation(invitationID string) error {
 	item := InvitationSubscription{}
 	err := repo.db.Delete(&item, "invitation_id = ?", invitationID).Error
 
@@ -52,7 +63,7 @@ func (repo *Repository) DeleteByInvitation(invitationID string) error {
 	return nil
 }
 
-func (repo *Repository) Create(subscription string, kind string) error {
+func (repo *repository) Create(subscription string, kind string) error {
 	notify := &Subscription{Kind: kind, Subscription: subscription, ID: uuid.New().String()}
 
 	err := repo.db.Create(notify).Error
@@ -63,7 +74,7 @@ func (repo *Repository) Create(subscription string, kind string) error {
 	return nil
 }
 
-func (repo *Repository) GetAll() ([]Subscription, error) {
+func (repo *repository) GetAll() ([]Subscription, error) {
 	subscriptions := []Subscription{}
 	err := repo.db.Find(&subscriptions).Error
 	if err != nil {
@@ -73,7 +84,7 @@ func (repo *Repository) GetAll() ([]Subscription, error) {
 	return subscriptions, nil
 }
 
-func (repo *Repository) GetByKind(kind string) ([]Subscription, error) {
+func (repo *repository) GetByKind(kind string) ([]Subscription, error) {
 	subscriptions := []Subscription{}
 	err := repo.db.Find(&subscriptions, "kind = ?", kind).Error
 	if err != nil {
@@ -83,7 +94,7 @@ func (repo *Repository) GetByKind(kind string) ([]Subscription, error) {
 	return subscriptions, nil
 }
 
-func (repo *Repository) SubscribeToInvitation(invitationID string, subscription string) {
+func (repo *repository) SubscribeToInvitation(invitationID string, subscription string) {
 	sub := Subscription{}
 	err := repo.db.Find(&sub, "subscription = ?", subscription).Error
 	if err != nil {
@@ -117,7 +128,7 @@ type SubscriptionWithInvitation struct {
 	InvitationID string
 }
 
-func (repo *Repository) GetByEvent(eventID string) ([]SubscriptionWithInvitation, error) {
+func (repo *repository) GetByEvent(eventID string) ([]SubscriptionWithInvitation, error) {
 	subscriptions := []SubscriptionWithInvitation{}
 	err := repo.db.Raw(`
 	SELECT s.*, inv_sub.invitation_id as invitation_id
@@ -146,7 +157,7 @@ func (repo *Repository) GetByEvent(eventID string) ([]SubscriptionWithInvitation
 	return subscriptions, nil
 }
 
-func (repo *Repository) GetSubscriptionByInvitation(inviteID string) (*Subscription, error) {
+func (repo *repository) GetSubscriptionByInvitation(inviteID string) (*Subscription, error) {
 	sub := Subscription{}
 	inviteSub := InvitationSubscription{}
 	err := repo.db.First(&inviteSub, "invitation_id = ?", inviteID).Error

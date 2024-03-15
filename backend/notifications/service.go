@@ -7,18 +7,29 @@ import (
 	webpush "github.com/SherClockHolmes/webpush-go"
 )
 
-func NewService(privateVapidKey, publicVapidKey string, repository *Repository) *Service {
-	return &Service{
+func NewService(privateVapidKey, publicVapidKey string, repository *repository) *service {
+	return &service{
 		privateVapidKey: privateVapidKey,
 		publicVapidKey:  publicVapidKey,
 		repository:      repository,
 	}
 }
 
-type Service struct {
+//go:generate mockgen -source=service.go -destination=service_mock.go -package=notifications
+type Service interface {
+	GetIsSubscribed(id string) bool
+	NotifyInvite(kind string, body string, invitationID string)
+	RemoveByInvitation(id string) error
+	NotifyGroup(subscriptionKind string, kind string, body string, url string)
+	RegisterForInvitation(invitationID, subscription, kind string)
+	NotifyEvent(eventID string, kind string, body string, url string)
+	Notify(subscription string, kind string, body string, url string)
+}
+
+type service struct {
 	privateVapidKey string
 	publicVapidKey  string
-	repository      *Repository
+	repository      *repository
 }
 
 type PushBody struct {
@@ -27,13 +38,13 @@ type PushBody struct {
 	URL  string `json:"url"`
 }
 
-func (service *Service) GetIsSubscribed(id string) bool {
+func (service *service) GetIsSubscribed(id string) bool {
 	inSub := service.repository.GetByInvitation(id)
 
 	return inSub.ID != ""
 }
 
-func (service *Service) NotifyInvite(kind string, body string, invitationID string) {
+func (service *service) NotifyInvite(kind string, body string, invitationID string) {
 	val, err := service.repository.GetSubscriptionByInvitation(invitationID)
 	if err != nil {
 		fmt.Println("Error notifying invite: ", err)
@@ -43,12 +54,12 @@ func (service *Service) NotifyInvite(kind string, body string, invitationID stri
 	service.Notify(val.Subscription, kind, body, "/invitation/"+invitationID)
 }
 
-func (service *Service) RemoveByInvitation(id string) error {
+func (service *service) RemoveByInvitation(id string) error {
 	err := service.repository.DeleteByInvitation(id)
 	return err
 }
 
-func (service *Service) NotifyGroup(subscriptionKind string, kind string, body string, url string) {
+func (service *service) NotifyGroup(subscriptionKind string, kind string, body string, url string) {
 	fmt.Println("Notifying group", subscriptionKind)
 	val, _ := service.repository.GetByKind(subscriptionKind)
 
@@ -57,12 +68,12 @@ func (service *Service) NotifyGroup(subscriptionKind string, kind string, body s
 	}
 }
 
-func (service *Service) RegisterForInvitation(invitationID, subscription, kind string) {
+func (service *service) RegisterForInvitation(invitationID, subscription, kind string) {
 	fmt.Println("Registering for updates by invitation: ", invitationID)
 	service.repository.SubscribeToInvitation(invitationID, subscription)
 }
 
-func (service *Service) NotifyEvent(eventID string, kind string, body string, url string) {
+func (service *service) NotifyEvent(eventID string, kind string, body string, url string) {
 	fmt.Println("Notifying event people: ", eventID)
 	val, err := service.repository.GetByEvent(eventID)
 
@@ -75,7 +86,7 @@ func (service *Service) NotifyEvent(eventID string, kind string, body string, ur
 	}
 }
 
-func (service *Service) Notify(subscription string, kind string, body string, url string) {
+func (service *service) Notify(subscription string, kind string, body string, url string) {
 	fmt.Println("Sending Notification ", kind, "body", body, " url: ", url)
 	s := &webpush.Subscription{}
 	json.Unmarshal([]byte(subscription), s)

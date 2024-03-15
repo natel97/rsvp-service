@@ -20,10 +20,10 @@ import (
 )
 
 type Controller struct {
-	repository              *repository
+	repository              types.Repository
 	eventRepository         event.Repository
 	rsvpRepository          rsvp.Repository
-	notifications           *notifications.Service
+	notifications           notifications.Service
 	personRepository        person.Repository
 	timeOptionRepository    timeoption.Repository
 	timeSelectionRepository timeselection.Repository
@@ -228,7 +228,7 @@ func (ctrl *Controller) create(ctx *gin.Context) {
 }
 
 func (ctrl *Controller) inviteGroup(ctx *gin.Context) {
-	body := InviteGroup{}
+	body := types.InviteGroup{}
 
 	err := ctx.BindJSON(&body)
 
@@ -415,7 +415,7 @@ func (ctrl *Controller) HandleAdminRoutes(group *gin.RouterGroup) {
 	group.POST("group", ctrl.inviteGroup)
 }
 
-func NewController(repository *repository, eventRepository event.Repository, rsvpRepository rsvp.Repository, notifications *notifications.Service, personRepository person.Repository, timeOptionRepository timeoption.Repository, timeSelectionRepository timeselection.Repository) *Controller {
+func NewController(repository types.Repository, eventRepository event.Repository, rsvpRepository rsvp.Repository, notifications notifications.Service, personRepository person.Repository, timeOptionRepository timeoption.Repository, timeSelectionRepository timeselection.Repository) *Controller {
 	return &Controller{
 		repository:              repository,
 		eventRepository:         eventRepository,

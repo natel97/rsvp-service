@@ -18,6 +18,7 @@ type RSVP struct {
 	BringingFriend string
 }
 
+//go:generate mockgen -source=rsvp.go -destination=repository_mock.go -package=rsvp
 type Repository interface {
 	Create(e RSVP) (*RSVP, error)
 	GetEventRSVPs(eventID string) ([]RSVP, error)

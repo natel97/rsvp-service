@@ -15,6 +15,7 @@ func NewRepository(db *gorm.DB) *repository {
 	}
 }
 
+//go:generate mockgen -source=repository.go -destination=repository_mock.go -package=timeselection
 type Repository interface {
 	UpdateSelection(to *TimeSelection) error
 	DeleteSelection(id string) error

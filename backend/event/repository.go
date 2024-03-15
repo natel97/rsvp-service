@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
+//go:generate mockgen -source=repository.go -destination=repository_mock.go -package=event
 type Repository interface {
 	Create(e Event) (*Event, error)
 	Get(id string) (*Event, error)
